@@ -49,6 +49,10 @@ pub enum Command {
         #[clap(short, long)]
         dir: Option<String>,
     },
+    Stage {
+        #[clap(short, long)]
+        dir: Option<String>,
+    },
     /// Push the local dot directory to the remote
     Push {
         #[clap(short, long)]

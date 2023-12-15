@@ -37,6 +37,9 @@ impl App {
                 let diff = stat(&config, working_dir)?;
                 println!("{}", diff);
             }
+            Command::Stage { dir } => {
+                // push(&config, dir)?;
+            }
             Command::Push { dir } => {
                 // push(&config, dir)?;
             }
