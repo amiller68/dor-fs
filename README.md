@@ -1,7 +1,9 @@
-# <h1 align="center"> Forge Template </h1>
+# <h1 align="center"> dor-fs </h1>
 
-**Template repository for getting started quickly with Foundry projects**
+dumb ol' reliable file system
 
+<!-- **Template repository for getting started quickly with Foundry projects** -->
+<!-- 
 ![Github Actions](https://github.com/foundry-rs/forge-template/workflows/CI/badge.svg)
 
 ## Getting Started
@@ -37,4 +39,4 @@ contract ContractTest is Test {
 ## Development
 
 This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
-# krondor-fs
+# krondor-fs -->

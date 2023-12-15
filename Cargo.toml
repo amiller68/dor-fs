@@ -1,0 +1,38 @@
+[package]
+name = "krondor-fs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+blake3 = "1.5.0"
+cid = { version = "0.11.0", features = ["serde-codec"] }
+clap = { version = "^4", features = ["derive"] }
+dotenvy = "0.15.7"
+ethers = { version =  "2.0.10", features = ["rustls"] }
+fs-tree = "0.5.5"
+http = "^0.2"
+ipfs-api-backend-hyper = "0.6.0"
+pico-args = "0.5.0"
+rand = "0.8.5"
+reqwest = { version = "0.11.20", features = ["multipart"] }
+serde = "1.0.193"
+serde_json = "1.0.106"
+thiserror = "1.0.50"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+url = "2.4.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.37"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio = { version = "1.32.0", features = ["macros"] }

@@ -1,0 +1,8 @@
+target/
+pkg/
+lib/
+cache/
+out/
+playground/
+.gas-snapshot
+.env
