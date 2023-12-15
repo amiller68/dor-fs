@@ -32,13 +32,10 @@ pub struct IpfsRemote {
     pub gateway_url: Option<String>,
 }
 
+#[derive(Default)]
 pub struct IpfsClient(HyperIpfsClient);
 
-impl Default for IpfsClient {
-    fn default() -> Self {
-        Self(HyperIpfsClient::default())
-    }
-}
+
 
 impl TryFrom<IpfsRemote> for IpfsClient {
     type Error = IpfsError;

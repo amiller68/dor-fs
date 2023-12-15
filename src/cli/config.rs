@@ -23,7 +23,7 @@ pub fn working_dot_dir(working_dir: PathBuf) -> Result<PathBuf, ConfigError> {
     let local_dot_path = local_dot_dir_with_base(&working_dir);
     // If not then this dir has not been cloned
     if !local_dot_path.exists() || !local_dot_path.is_dir() {
-        return Err(ConfigError::MissingDotPath(local_dot_path).into());
+        return Err(ConfigError::MissingDotPath(local_dot_path));
     }
     Ok(local_dot_path)
 }
@@ -304,7 +304,7 @@ pub enum ConfigError {
 pub fn xdg_config_home() -> Result<PathBuf, ConfigError> {
     // Construct
     let path = PathBuf::from(XDG_PATH.replace(
-        "~",
+        '~',
         &env::var("HOME").map_err(|_| ConfigError::MissingEnvVar("HOME".to_string()))?,
     ));
     // Return

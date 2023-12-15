@@ -25,7 +25,7 @@ impl App {
             Command::Deploy => {
                 // deploy(&config)?;
             }
-            Command::Clone { dir } => {
+            Command::Clone { dir: _ } => {
                 // clone(&config, dir)?;
             }
             Command::Diff { dir } => {
@@ -37,10 +37,10 @@ impl App {
                 let diff = stat(&config, working_dir)?;
                 println!("{}", diff);
             }
-            Command::Stage { dir } => {
+            Command::Stage { dir: _ } => {
                 // push(&config, dir)?;
             }
-            Command::Push { dir } => {
+            Command::Push { dir: _ } => {
                 // push(&config, dir)?;
             }
         }

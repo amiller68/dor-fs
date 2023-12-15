@@ -194,7 +194,7 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
 /// Get the next fs-tree from the working directory           
 fn next_fs_tree(working_dir_path: PathBuf) -> Result<FsTree, DiffError> {
     // Read Fs-tree at dir or pwd, stripping off the local dot directory
-    let next = match fs_tree::FsTree::read_at(working_dir_path.to_str().unwrap().to_string())? {
+    let next = match fs_tree::FsTree::read_at(working_dir_path.to_str().unwrap())? {
         fs_tree::FsTree::Directory(mut d) => {
             let _res = &d.remove_entry(&dot_dir());
             fs_tree::FsTree::Directory(d)

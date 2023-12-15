@@ -80,7 +80,7 @@ impl Client {
                 Ok(reciept)
             }
             None => {
-                return Err(ClientError::NoSigner);
+                Err(ClientError::NoSigner)
             }
         }
     }
@@ -123,7 +123,7 @@ impl Client {
                 Ok(reciept)
             }
             None => {
-                return Err(ClientError::NoSigner);
+                Err(ClientError::NoSigner)
             }
         }
     }
@@ -145,9 +145,9 @@ impl From<Cid> for CidWrapper {
     }
 }
 
-impl Into<Cid> for CidWrapper {
-    fn into(self) -> Cid {
-        self.0
+impl From<CidWrapper> for Cid {
+    fn from(val: CidWrapper) -> Self {
+        val.0
     }
 }
 
