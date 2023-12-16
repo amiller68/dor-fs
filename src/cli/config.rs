@@ -8,6 +8,7 @@ use std::{
 use ethers::signers::Wallet;
 use serde::{Deserialize, Serialize};
 
+use crate::root_cid::EthRemote;
 use crate::ipfs::IpfsRemote;
 
 use super::args::Args;
@@ -60,6 +61,9 @@ pub struct Config {
     local_ipfs_api_port: String,
     /// Default is 8080
     local_ipfs_gateway_port: String,
+
+    /// Remote configuration for an eth node
+    eth_remote: Option<EthRemote>,
 
     /// Remote configuration for preparing and pinning content
     /// Should be a remote ipfs node with access add and blocks api
@@ -146,8 +150,13 @@ impl Config {
             env::var("LOCAL_IPFS_GATEWAY_PORT").unwrap_or_else(|_| "8080".to_string())
         });
 
-        let ipfs_remote = match maybe_on_disk_config {
+        let ipfs_remote = match maybe_on_disk_config.clone() {
             Some(on_disk_config) => on_disk_config.ipfs_remote(),
+            None => None,
+        };
+
+        let eth_remote = match maybe_on_disk_config.clone() {
+            Some(on_disk_config) => on_disk_config.eth_remote(),
             None => None,
         };
 
@@ -160,6 +169,7 @@ impl Config {
             local_ipfs_host,
             local_ipfs_api_port,
             local_ipfs_gateway_port,
+            eth_remote,
             ipfs_remote,
             admin_key_string,
         })
@@ -205,6 +215,8 @@ pub struct OnDiskConfig {
     root_cid_contract_address_string: Option<String>,
     /// Device keystore path
     device_keystore_path: PathBuf,
+    /// Remote eth configuration
+    eth_remote: Option<EthRemote>,
     /// Remote ipfs configuration
     ipfs_remote: Option<IpfsRemote>,
 }
@@ -238,6 +250,7 @@ impl OnDiskConfig {
                 root_cid_contract_address_string: None,
                 device_keystore_path,
                 ipfs_remote: None,
+                eth_remote: None,
             };
 
             // Serialize the config
@@ -273,6 +286,10 @@ impl OnDiskConfig {
 
     pub fn device_keystore_path(&self) -> PathBuf {
         self.device_keystore_path.clone()
+    }
+
+    pub fn eth_remote(&self) -> Option<EthRemote> {
+        self.eth_remote.clone()
     }
 
     pub fn ipfs_remote(&self) -> Option<IpfsRemote> {

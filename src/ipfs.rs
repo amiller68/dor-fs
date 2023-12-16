@@ -35,8 +35,6 @@ pub struct IpfsRemote {
 #[derive(Default)]
 pub struct IpfsClient(HyperIpfsClient);
 
-
-
 impl TryFrom<IpfsRemote> for IpfsClient {
     type Error = IpfsError;
 

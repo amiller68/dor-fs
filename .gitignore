@@ -6,3 +6,4 @@ out/
 playground/
 .gas-snapshot
 .env
+.env.dev

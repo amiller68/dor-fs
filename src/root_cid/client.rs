@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cid::Cid;
+use serde::{Deserialize, Serialize};
 use ethers::{
     abi::Abi,
     abi::{InvalidOutputType, Tokenizable},
@@ -10,8 +11,17 @@ use ethers::{
     signers::LocalWallet,
     types::{Address, TransactionRequest},
 };
+use url::Url;
 
 const ABI_STRING: &str = include_str!("../../out/RootCid.sol/RootCid.json");
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EthRemote {
+    pub url: String,
+    pub address: Option<String>,
+    pub chain_id: u64,
+    pub key: Option<String>,
+}
 
 // TODO: better error handling
 pub struct Client {
@@ -20,27 +30,26 @@ pub struct Client {
     chain_id: u64,
 }
 
-impl Client {
-    pub fn new(
-        url: String,
-        address: String,
-        chain_id: u64,
-        key: Option<String>,
-    ) -> Result<Self, ClientError> {
+impl TryFrom<EthRemote> for Client {
+    type Error = ClientError;
+
+    fn try_from(remote: EthRemote) -> Result<Self, Self::Error> {
         let client =
-            Provider::<Http>::try_from(url).map_err(|e| ClientError::Default(e.to_string()))?;
-        let address: Address = address
+            Provider::<Http>::try_from(remote.url).map_err(|e| ClientError::Default(e.to_string()))?;
+        let address: Address = remote
+            .address
+            .ok_or(ClientError::Default("No Address".to_string()))?
             .parse()
             .map_err(|_| ClientError::Default("Invalid Address".to_string()))?;
         let abi: Abi =
             serde_json::from_str(ABI_STRING).map_err(|e| ClientError::Default(e.to_string()))?;
         let contract = Contract::new(address, abi, Arc::new(client.clone()));
-        let signer = match key {
+        let signer = match remote.key {
             Some(key) => {
                 let wallet = key
                     .parse::<LocalWallet>()
                     .map_err(|_| ClientError::Default("Invalid Key".to_string()))?
-                    .with_chain_id(chain_id);
+                    .with_chain_id(remote.chain_id);
                 let signer = SignerMiddleware::new(client, wallet);
                 Some(signer)
             }
@@ -49,12 +58,12 @@ impl Client {
         Ok(Self {
             contract,
             signer,
-            chain_id,
+            chain_id: remote.chain_id,
         })
     }
+}
 
-    /* Permissions */
-
+impl Client {
     /// Grant the given address the ability to write to the contract cid
     pub async fn grant_writer(
         &self,
@@ -79,9 +88,7 @@ impl Client {
                     .map_err(|e| ClientError::Default(e.to_string()))?;
                 Ok(reciept)
             }
-            None => {
-                Err(ClientError::NoSigner)
-            }
+            None => Err(ClientError::NoSigner),
         }
     }
 
@@ -122,9 +129,7 @@ impl Client {
                     .map_err(|e| ClientError::Default(e.to_string()))?;
                 Ok(reciept)
             }
-            None => {
-                Err(ClientError::NoSigner)
-            }
+            None => Err(ClientError::NoSigner),
         }
     }
 }

@@ -91,7 +91,6 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
     let mut next_next = next_iter.next();
     let mut base_next = base_iter.next();
 
-
     loop {
         match (next_next.clone(), base_next) {
             // If these are both something we got some work to do
