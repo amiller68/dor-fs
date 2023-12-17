@@ -29,10 +29,21 @@ pub struct Args {
 pub enum Command {
     /// Initialize a new device
     Init,
-    /// Deploy a new contract / instance of the krondor contract
-    Deploy,
+    /// Configure dor-rs
+    Configure {
+        #[clap(subcommand)]
+        subcommand: ConfigureSubcommand,
+    },
     /// Healthcheck systems and configuration
-    Health,
+    Health {
+        #[clap(short, long)]
+        dir: Option<String>,
+    },
+    /// Wipe changes from local dot directory
+    Wipe {
+        #[clap(short, long)]
+        dir: Option<String>,
+    },
     /// Clone a copy of the remote to a directory.
     Clone {
         #[clap(short, long)]
@@ -57,5 +68,58 @@ pub enum Command {
     Push {
         #[clap(short, long)]
         dir: Option<String>,
+    },
+}
+
+#[derive(Debug, Subcommand, Clone, PartialEq)]
+pub enum ConfigureSubcommand {
+    /// Create a new configuration
+    Create {
+        #[clap(subcommand)]
+        subcommand: ConfigureCreateSubcommand,
+    },
+    /// Set a configuration value
+    Set {
+        #[clap(subcommand)]
+        subcommand: ConfigureSetSubcommand,
+    },
+}
+
+#[derive(Debug, Subcommand, Clone, PartialEq)]
+pub enum ConfigureCreateSubcommand {
+    /// Create a new Remote Eth configuration
+    /// This will configure an rpc connection, contract address, and chain id
+    Eth {
+        #[clap(long, short)]
+        alias: String,
+        #[clap(long)]
+        rpc: String,
+        #[clap(long)]
+        address: String,
+        #[clap(long)]
+        chain_id: u16,
+    },
+    /// Create a new Remote IPFS configuration
+    Ipfs {
+        #[clap(long, short)]
+        alias: String,
+        #[clap(long, short)]
+        url: String,
+        #[clap(long)]
+        gateway_url: Option<String>,
+    },
+}
+
+#[derive(Debug, Subcommand, Clone, PartialEq)]
+pub enum ConfigureSetSubcommand {
+    /// Set the default remote Eth configuration
+    Eth {
+        #[clap(long, short)]
+        alias: String,
+    },
+    /// Set the default remote IPFS configuration
+    Ipfs {
+        #[clap(long, short)]
+        alias: String,
     },
 }

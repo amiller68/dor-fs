@@ -2,51 +2,75 @@ use std::{
     env,
     fs::{create_dir_all, File},
     io::Write,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
+use cid::Cid;
 use ethers::signers::Wallet;
 use serde::{Deserialize, Serialize};
 
-use crate::root_cid::EthRemote;
-use crate::ipfs::IpfsRemote;
+use crate::ipfs::{IpfsClient, IpfsError, IpfsRemote};
+use crate::root_cid::{
+    EthClient as RootCidClient, EthClientError as RootCidClientError, EthRemote,
+};
 
-use super::args::Args;
+use super::args::{Args, ConfigureCreateSubcommand, ConfigureSetSubcommand, ConfigureSubcommand};
 
-const XDG_PATH: &str = "~/.config/krondor-fs";
+const XDG_PATH: &str = "~/.config/dor-fs";
 const DEFAULT_CONFIG_NAME: &str = "defaults.json";
+const DEAULT_ETH_REMOTE_CONFIG_DIR: &str = "eth";
+const DEFAULT_IPFS_REMOTE_CONFIG_DIR: &str = "ipfs";
 const DEFAULT_DEVICE_KEYSTORE_NAME: &str = "device-keystore.json";
-const DEFAULT_LOCAL_DOT_DIR: &str = ".fs";
-pub const DEFAULT_LOCAL_DOT_CHANGELOG: &str = "changelog.json";
+pub const DEFAULT_LOCAL_DOT_DIR: &str = ".fs";
+pub const DEFAULT_LOCAL_DOT_CHANGELOG: &str = "change_log.json";
+pub const DEFAULT_LOCAL_DOT_DORFS: &str = "dor_fs.json";
+pub const DEFAULT_LOCAL_DOT_ROOTCID: &str = "root_cid";
+pub const DEFAULT_MFS_ROOT: &str = "/dor-fs";
 
-pub fn working_dot_dir(working_dir: PathBuf) -> Result<PathBuf, ConfigError> {
-    // Check if the local config exists in the working directory
-    let local_dot_path = local_dot_dir_with_base(&working_dir);
-    // If not then this dir has not been cloned
-    if !local_dot_path.exists() || !local_dot_path.is_dir() {
-        return Err(ConfigError::MissingDotPath(local_dot_path));
+pub fn configure(_config: &Config, subcommand: ConfigureSubcommand) -> Result<(), ConfigError> {
+    match subcommand {
+        ConfigureSubcommand::Create { subcommand } => match subcommand {
+            ConfigureCreateSubcommand::Eth {
+                alias,
+                rpc,
+                address,
+                chain_id,
+            } => {
+                let eth_remote = EthRemote {
+                    rpc,
+                    address,
+                    chain_id,
+                };
+                let _eth_client = RootCidClient::try_from(eth_remote.clone())?;
+                OnDiskConfig::create_eth_remote(alias, eth_remote)?;
+            }
+            ConfigureCreateSubcommand::Ipfs {
+                alias,
+                url,
+                gateway_url,
+            } => {
+                let ipfs_remote = IpfsRemote { url, gateway_url };
+                let _ipfs_client = IpfsClient::try_from(ipfs_remote.clone())?;
+                OnDiskConfig::create_ipfs_remote(alias, ipfs_remote)?;
+            }
+        },
+        ConfigureSubcommand::Set { subcommand } => match subcommand {
+            ConfigureSetSubcommand::Eth { alias } => {
+                let mut on_disk_config = OnDiskConfig::load()?;
+                on_disk_config.set_eth_remote_alias(alias)?;
+            }
+            ConfigureSetSubcommand::Ipfs { alias } => {
+                let mut on_disk_config = OnDiskConfig::load()?;
+                on_disk_config.set_ipfs_remote_alias(alias)?;
+            }
+        },
     }
-    Ok(local_dot_path)
+    Ok(())
 }
 
-/// Path to the local dot directory tracking changes to the local filesystem
-pub fn dot_dir() -> PathBuf {
-    PathBuf::from(DEFAULT_LOCAL_DOT_DIR)
-}
-
-/// Path to the local dot directory tracking changes to the local filesystem
-/// relative to the working directory
-pub fn local_dot_dir_with_base(working_dir_path: &Path) -> PathBuf {
-    working_dir_path.join(DEFAULT_LOCAL_DOT_DIR)
-}
-
-#[allow(dead_code)]
 // TODO: ipfs configuration
 #[derive(Debug)]
 pub struct Config {
-    /// Address of the root cid contract
-    /// Should have on disk defaults
-    contract_address_string: Option<String>,
     /// Path to the device keystore
     /// Should have on disk defaults
     device_keystore_path: Option<PathBuf>,
@@ -83,10 +107,9 @@ impl Config {
     /// Parse the config from args, env, and on disk defaults appropriate
     /// Takes priority: args > env > on disk defaults
     pub fn parse(args: &Args) -> Result<Self, ConfigError> {
-        // This is weired but makes the interface clean
+        // This is wierd but makes the interface clean
         // There's a weird responsibility boundary crossing here but
         if args.command.clone() == super::args::Command::Init {
-            tracing::info!("Initializing new on disk config");
             OnDiskConfig::init()?;
             std::process::exit(0);
         }
@@ -94,29 +117,10 @@ impl Config {
         // (maybe) Load the on disk config
         let maybe_on_disk_config = match OnDiskConfig::load() {
             Ok(on_disk_config) => Some(on_disk_config),
-            Err(ConfigError::MissingConfigFile(_)) => {
-                tracing::warn!("No on disk config found");
-                None
-            }
             Err(e) => {
                 tracing::error!("Failed to load on disk config: {:?}", e);
                 return Err(e);
             }
-        };
-
-        // kinda verbose and ugly
-        let contract_address_string = match args.contract.clone() {
-            Some(contract_address_string) => Some(contract_address_string),
-            None => match env::var("CONTRACT_ADDRESS") {
-                Ok(contract_address_string) => Some(contract_address_string),
-                Err(_) => match maybe_on_disk_config.clone() {
-                    Some(on_disk_config) => on_disk_config.root_cid_contract_address_string(),
-                    None => {
-                        tracing::warn!("Missing contract address");
-                        None
-                    }
-                },
-            },
         };
 
         let device_keystore_path = match args.device_keystore.clone() {
@@ -151,19 +155,30 @@ impl Config {
         });
 
         let ipfs_remote = match maybe_on_disk_config.clone() {
-            Some(on_disk_config) => on_disk_config.ipfs_remote(),
+            Some(on_disk_config) => match on_disk_config.ipfs_remote() {
+                Ok(ipfs_remote) => Some(ipfs_remote),
+                Err(ConfigError::MissingIpfsRemoteAlias) => None,
+                Err(e) => {
+                    return Err(e);
+                }
+            },
             None => None,
         };
 
         let eth_remote = match maybe_on_disk_config.clone() {
-            Some(on_disk_config) => on_disk_config.eth_remote(),
+            Some(on_disk_config) => match on_disk_config.eth_remote() {
+                Ok(eth_remote) => Some(eth_remote),
+                Err(ConfigError::MissingEthRemoteAlias) => None,
+                Err(e) => {
+                    return Err(e);
+                }
+            },
             None => None,
         };
 
         let admin_key_string = args.admin_key.clone();
 
         Ok(Self {
-            contract_address_string,
             device_keystore_path,
             local_ipfs_scheme,
             local_ipfs_host,
@@ -175,32 +190,29 @@ impl Config {
         })
     }
 
-    pub fn contract_address_string(&self) -> Option<String> {
-        self.contract_address_string.clone()
-    }
-
     pub fn device_keystore_path(&self) -> Option<PathBuf> {
         self.device_keystore_path.clone()
     }
 
-    pub fn local_ipfs_scheme(&self) -> String {
-        self.local_ipfs_scheme.clone()
-    }
-
-    pub fn local_ipfs_host(&self) -> String {
-        self.local_ipfs_host.clone()
-    }
-
-    pub fn local_ipfs_api_port(&self) -> String {
-        self.local_ipfs_api_port.clone()
-    }
-
-    pub fn local_ipfs_gateway_port(&self) -> String {
-        self.local_ipfs_gateway_port.clone()
+    pub fn local_ipfs_remote(&self) -> IpfsRemote {
+        IpfsRemote {
+            url: format!(
+                "{}://{}:{}",
+                self.local_ipfs_scheme, self.local_ipfs_host, self.local_ipfs_api_port
+            ),
+            gateway_url: Some(format!(
+                "{}://{}:{}",
+                self.local_ipfs_scheme, self.local_ipfs_host, self.local_ipfs_gateway_port
+            )),
+        }
     }
 
     pub fn ipfs_remote(&self) -> Option<IpfsRemote> {
         self.ipfs_remote.clone()
+    }
+
+    pub fn eth_remote(&self) -> Option<EthRemote> {
+        self.eth_remote.clone()
     }
 
     pub fn admin_key_string(&self) -> Option<String> {
@@ -211,14 +223,14 @@ impl Config {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 /// On disk device defaults
 pub struct OnDiskConfig {
-    /// Root cid contract address
-    root_cid_contract_address_string: Option<String>,
     /// Device keystore path
     device_keystore_path: PathBuf,
+    /// root cid
+    root_cid: Option<Cid>,
     /// Remote eth configuration
-    eth_remote: Option<EthRemote>,
+    eth_remote_alias: Option<String>,
     /// Remote ipfs configuration
-    ipfs_remote: Option<IpfsRemote>,
+    ipfs_remote_alias: Option<String>,
 }
 
 impl OnDiskConfig {
@@ -229,12 +241,15 @@ impl OnDiskConfig {
     /// TODO: feature gaurd tracing
     pub fn init() -> Result<(), ConfigError> {
         let xdg_path = xdg_config_home()?;
-        let config_path = xdg_path.join(DEFAULT_CONFIG_NAME);
+        let eth_remote_path = xdg_path.join(DEAULT_ETH_REMOTE_CONFIG_DIR);
+        let ipfs_remote_path = xdg_path.join(DEFAULT_IPFS_REMOTE_CONFIG_DIR);
         let device_keystore_path = xdg_path.join(DEFAULT_DEVICE_KEYSTORE_NAME);
 
         // Check if the xdg home directory exists. If not then go ahead and initialize everything
         if !xdg_path.exists() {
             create_dir_all(&xdg_path)?;
+            create_dir_all(&eth_remote_path)?;
+            create_dir_all(&ipfs_remote_path)?;
 
             let mut rng = rand::thread_rng();
             // Create a new keystore
@@ -247,17 +262,12 @@ impl OnDiskConfig {
             )?;
 
             let config = Self {
-                root_cid_contract_address_string: None,
                 device_keystore_path,
-                ipfs_remote: None,
-                eth_remote: None,
+                root_cid: None,
+                ipfs_remote_alias: None,
+                eth_remote_alias: None,
             };
-
-            // Serialize the config
-            let config_json = serde_json::to_string(&config)?;
-            // Write the config to disk
-            let mut config_file = File::create(config_path)?;
-            config_file.write_all(config_json.as_bytes())?;
+            config.save()?;
         }
         // If the xdg home directory does exist, check how far we can proceed.
         else {
@@ -280,20 +290,107 @@ impl OnDiskConfig {
         Ok(config)
     }
 
-    pub fn root_cid_contract_address_string(&self) -> Option<String> {
-        self.root_cid_contract_address_string.clone()
+    /// Load the Eth remote configuration using the alias
+    pub fn eth_remote(&self) -> Result<EthRemote, ConfigError> {
+        let xdg_path = xdg_config_home()?;
+        let eth_remote_dir_path = xdg_path.join(DEAULT_ETH_REMOTE_CONFIG_DIR);
+        let eth_remote_config_path = match self.eth_remote_alias.clone() {
+            Some(eth_remote_alias) => {
+                let eth_remote_config_path = eth_remote_dir_path.join(eth_remote_alias);
+                eth_remote_config_path
+            }
+            None => {
+                return Err(ConfigError::MissingEthRemoteAlias);
+            }
+        };
+        let eth_remote_config = std::fs::read_to_string(eth_remote_config_path)?;
+        let eth_remote: EthRemote = serde_json::from_str(&eth_remote_config)?;
+
+        Ok(eth_remote)
+    }
+
+    /// Create a new eth remote configuration using the alias
+    pub fn create_eth_remote(
+        eth_remote_alias: String,
+        eth_remote: EthRemote,
+    ) -> Result<(), ConfigError> {
+        let xdg_path = xdg_config_home()?;
+        let eth_remote_dir_path = xdg_path.join(DEAULT_ETH_REMOTE_CONFIG_DIR);
+        let eth_remote_config_path = eth_remote_dir_path.join(eth_remote_alias.clone());
+
+        // Serialize the config
+        let eth_remote_config = serde_json::to_string(&eth_remote)?;
+        // Write the config to disk
+        let mut eth_remote_config_file = File::create(eth_remote_config_path)?;
+        eth_remote_config_file.write_all(eth_remote_config.as_bytes())?;
+
+        Ok(())
+    }
+
+    /// Set the eth remote alias
+    pub fn set_eth_remote_alias(&mut self, eth_remote_alias: String) -> Result<(), ConfigError> {
+        self.eth_remote_alias = Some(eth_remote_alias);
+        self.save()
+    }
+
+    /// Load the Ipfs remote configuration using the alias
+    pub fn ipfs_remote(&self) -> Result<IpfsRemote, ConfigError> {
+        let xdg_path = xdg_config_home()?;
+        let ipfs_remote_dir_path = xdg_path.join(DEFAULT_IPFS_REMOTE_CONFIG_DIR);
+        let ipfs_remote_config_path = match self.ipfs_remote_alias.clone() {
+            Some(ipfs_remote_alias) => {
+                let ipfs_remote_config_path = ipfs_remote_dir_path.join(ipfs_remote_alias);
+                ipfs_remote_config_path
+            }
+            None => {
+                return Err(ConfigError::MissingIpfsRemoteAlias);
+            }
+        };
+        let ipfs_remote_config = std::fs::read_to_string(ipfs_remote_config_path)?;
+        let ipfs_remote: IpfsRemote = serde_json::from_str(&ipfs_remote_config)?;
+
+        Ok(ipfs_remote)
+    }
+
+    /// Create a new ipfs remote configuration using the alias
+    pub fn create_ipfs_remote(
+        ipfs_remote_alias: String,
+        ipfs_remote: IpfsRemote,
+    ) -> Result<(), ConfigError> {
+        let xdg_path = xdg_config_home()?;
+        let ipfs_remote_dir_path = xdg_path.join(DEFAULT_IPFS_REMOTE_CONFIG_DIR);
+        let ipfs_remote_config_path = ipfs_remote_dir_path.join(ipfs_remote_alias.clone());
+
+        // Serialize the config
+        let ipfs_remote_config = serde_json::to_string(&ipfs_remote)?;
+        // Write the config to disk
+        let mut ipfs_remote_config_file = File::create(ipfs_remote_config_path)?;
+        ipfs_remote_config_file.write_all(ipfs_remote_config.as_bytes())?;
+
+        Ok(())
+    }
+
+    /// Set the ipfs remote alias
+    pub fn set_ipfs_remote_alias(&mut self, ipfs_remote_alias: String) -> Result<(), ConfigError> {
+        self.ipfs_remote_alias = Some(ipfs_remote_alias);
+        self.save()
     }
 
     pub fn device_keystore_path(&self) -> PathBuf {
         self.device_keystore_path.clone()
     }
 
-    pub fn eth_remote(&self) -> Option<EthRemote> {
-        self.eth_remote.clone()
-    }
+    fn save(&self) -> Result<(), ConfigError> {
+        let xdg_path = xdg_config_home()?;
+        let config_path = xdg_path.join(DEFAULT_CONFIG_NAME);
 
-    pub fn ipfs_remote(&self) -> Option<IpfsRemote> {
-        self.ipfs_remote.clone()
+        // Serialize the config
+        let config_json = serde_json::to_string(&self)?;
+        // Write the config to disk
+        let mut config_file = File::create(config_path)?;
+        config_file.write_all(config_json.as_bytes())?;
+
+        Ok(())
     }
 }
 
@@ -309,12 +406,18 @@ pub enum ConfigError {
     KeystoreError(#[from] ethers::signers::WalletError),
     #[error("failed to parse config: {0}")]
     ConfigParseError(#[from] serde_json::Error),
-    #[error("Missing config file: {0}")]
-    MissingConfigFile(PathBuf),
     #[error("Missing dot path: {0}")]
     MissingDotPath(PathBuf),
-    #[error("Invalid Address: {0}")]
-    InvalidAddress(String),
+    #[error("Missing root cid")]
+    MissingRootCid,
+    #[error("No configured eth remote alias")]
+    MissingEthRemoteAlias,
+    #[error("No configured ipfs remote alias")]
+    MissingIpfsRemoteAlias,
+    #[error("Invalid eth remote: {0}")]
+    InvalidEthRemote(#[from] RootCidClientError),
+    #[error("Invalid ipfs remote: {0}")]
+    InvalidIpfsRemote(#[from] IpfsError),
 }
 
 /// Grab config path

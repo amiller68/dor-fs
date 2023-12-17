@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cid::Cid;
-use serde::{Deserialize, Serialize};
 use ethers::{
     abi::Abi,
     abi::{InvalidOutputType, Tokenizable},
@@ -11,68 +10,67 @@ use ethers::{
     signers::LocalWallet,
     types::{Address, TransactionRequest},
 };
-use url::Url;
+use serde::{Deserialize, Serialize};
 
 const ABI_STRING: &str = include_str!("../../out/RootCid.sol/RootCid.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthRemote {
-    pub url: String,
-    pub address: Option<String>,
-    pub chain_id: u64,
-    pub key: Option<String>,
+    pub rpc: String,
+    pub address: String,
+    pub chain_id: u16,
 }
 
 // TODO: better error handling
-pub struct Client {
-    pub(crate) contract: Contract<ethers::providers::Provider<Http>>,
+pub struct EthClient {
+    client: Provider<Http>,
+    contract: Contract<ethers::providers::Provider<Http>>,
     signer: Option<SignerMiddleware<Provider<Http>, LocalWallet>>,
-    chain_id: u64,
+    chain_id: u16,
 }
 
-impl TryFrom<EthRemote> for Client {
-    type Error = ClientError;
+impl TryFrom<EthRemote> for EthClient {
+    type Error = EthClientError;
 
     fn try_from(remote: EthRemote) -> Result<Self, Self::Error> {
-        let client =
-            Provider::<Http>::try_from(remote.url).map_err(|e| ClientError::Default(e.to_string()))?;
+        let client = Provider::<Http>::try_from(remote.rpc)
+            .map_err(|e| EthClientError::Default(e.to_string()))?;
         let address: Address = remote
             .address
-            .ok_or(ClientError::Default("No Address".to_string()))?
             .parse()
-            .map_err(|_| ClientError::Default("Invalid Address".to_string()))?;
-        let abi: Abi =
-            serde_json::from_str(ABI_STRING).map_err(|e| ClientError::Default(e.to_string()))?;
+            .map_err(|_| EthClientError::Default("Invalid Address".to_string()))?;
+        let abi: Abi = serde_json::from_str(ABI_STRING)?;
         let contract = Contract::new(address, abi, Arc::new(client.clone()));
-        let signer = match remote.key {
-            Some(key) => {
-                let wallet = key
-                    .parse::<LocalWallet>()
-                    .map_err(|_| ClientError::Default("Invalid Key".to_string()))?
-                    .with_chain_id(remote.chain_id);
-                let signer = SignerMiddleware::new(client, wallet);
-                Some(signer)
-            }
-            None => None,
-        };
         Ok(Self {
+            client,
             contract,
-            signer,
+            signer: None,
             chain_id: remote.chain_id,
         })
     }
 }
 
-impl Client {
+impl EthClient {
+    /// Attach SignerMiddleware to the client
+    pub fn with_signer(&mut self, key: String) -> Result<&Self, EthClientError> {
+        let wallet = key
+            .parse::<LocalWallet>()
+            .map_err(|_| EthClientError::Default("Invalid Key".to_string()))?
+            .with_chain_id(self.chain_id);
+        let signer = SignerMiddleware::new(self.client.clone(), wallet);
+        self.signer = Some(signer);
+        Ok(self)
+    }
+
     /// Grant the given address the ability to write to the contract cid
     pub async fn grant_writer(
         &self,
         address: Address,
-    ) -> Result<Option<TransactionReceipt>, ClientError> {
+    ) -> Result<Option<TransactionReceipt>, EthClientError> {
         let data = self
             .contract
             .encode("grantWriter", (address,))
-            .map_err(|e| ClientError::Default(e.to_string()))?;
+            .map_err(|e| EthClientError::Default(e.to_string()))?;
         let tx = TransactionRequest::new()
             .to(self.contract.address())
             .data(data)
@@ -82,38 +80,42 @@ impl Client {
                 let signed_tx = signer
                     .send_transaction(tx, None)
                     .await
-                    .map_err(|e| ClientError::Default(e.to_string()))?;
+                    .map_err(|e| EthClientError::Default(e.to_string()))?;
                 let reciept = signed_tx
                     .await
-                    .map_err(|e| ClientError::Default(e.to_string()))?;
+                    .map_err(|e| EthClientError::Default(e.to_string()))?;
                 Ok(reciept)
             }
-            None => Err(ClientError::NoSigner),
+            None => Err(EthClientError::MissingSigner),
         }
     }
 
     /* CRUD */
 
     /// Read the current cid from the contract
-    pub async fn read(&self) -> Result<Cid, ClientError> {
+    pub async fn read(&self) -> Result<Cid, EthClientError> {
         let cid: Cid = self
             .contract
-            .method::<_, CidWrapper>("get", ())
-            .map_err(|e| ClientError::Default(e.to_string()))?
+            .method::<_, CidWrapper>("read", ())
+            .map_err(|e| EthClientError::Default(e.to_string()))?
             .call()
             .await
-            .map_err(|e| ClientError::Default(e.to_string()))?
+            .map_err(|e| EthClientError::Default(e.to_string()))?
             .into();
         Ok(cid)
     }
 
     /// Update the current cid in the contract
     /// Requires a signer
-    pub async fn update(&self, cid: Cid) -> Result<Option<TransactionReceipt>, ClientError> {
+    pub async fn update(
+        &self,
+        previous_cid: Cid,
+        cid: Cid,
+    ) -> Result<Option<TransactionReceipt>, EthClientError> {
         let data = self
             .contract
-            .encode("update", (CidWrapper(cid),))
-            .map_err(|e| ClientError::Default(e.to_string()))?;
+            .encode("update", (CidWrapper(previous_cid), CidWrapper(cid)))
+            .map_err(|e| EthClientError::Default(e.to_string()))?;
         let tx = TransactionRequest::new()
             .to(self.contract.address())
             .data(data)
@@ -123,23 +125,30 @@ impl Client {
                 let signed_tx = signer
                     .send_transaction(tx, None)
                     .await
-                    .map_err(|e| ClientError::Default(e.to_string()))?;
+                    .map_err(|e| EthClientError::Default(e.to_string()))?;
                 let reciept = signed_tx
                     .await
-                    .map_err(|e| ClientError::Default(e.to_string()))?;
+                    .map_err(|e| EthClientError::Default(e.to_string()))?;
                 Ok(reciept)
             }
-            None => Err(ClientError::NoSigner),
+            None => Err(EthClientError::MissingSigner),
         }
     }
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum ClientError {
-    #[error("Client Error: {0}")]
+pub enum EthClientError {
+    #[error("No signer")]
+    MissingSigner,
+    #[error("Missing address")]
+    MissingAddress,
+    #[error("abi error: {0}")]
+    Abi(#[from] ethers::abi::Error),
+    #[error("serde json error: {0}")]
+    SerdeJson(#[from] serde_json::Error),
+    #[error("default error: {0}")]
     Default(String),
-    #[error("No Signer")]
-    NoSigner,
+    // TODO: better error handling
 }
 
 struct CidWrapper(Cid);

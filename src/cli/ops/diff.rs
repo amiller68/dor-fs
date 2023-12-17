@@ -1,54 +1,14 @@
-use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::PathBuf;
 
 use fs_tree::FsTree;
-use serde::{Deserialize, Serialize};
 
-use crate::cli::config::{
-    dot_dir, working_dot_dir, Config, ConfigError, DEFAULT_LOCAL_DOT_CHANGELOG,
-};
+use crate::cli::config::{Config, ConfigError, DEFAULT_LOCAL_DOT_CHANGELOG};
+
+use super::change_log::{ChangeLog, ChangeType};
+use super::utils::{dot_dir, working_dot_dir};
 
 const DIR_HASH_LABEL: &str = "DIRERCTORY";
-
-// TODO: this type isn't quite right
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub enum DiffType {
-    Base,
-    Added,
-    Modified,
-    Removed,
-}
-
-impl std::fmt::Display for DiffType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Self::Base => "\x1b[0;32mBase\x1b[0m",
-            Self::Added => "\x1b[0;32mAdded\x1b[0m",
-            Self::Modified => "\x1b[0;33mModified\x1b[0m",
-            Self::Removed => "\x1b[0;31mRemoved\x1b[0m",
-        };
-        write!(f, "{}", s)
-    }
-}
-
-/// Tracks what files are in the local clone and their hashes
-type Changelog = BTreeMap<PathBuf, (String, DiffType)>;
-
-pub struct DisaplyableChangelog(pub Changelog);
-
-impl std::fmt::Display for DisaplyableChangelog {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut s = String::new();
-        for (path, (_hash, diff_type)) in self.0.iter() {
-            if diff_type == &DiffType::Base {
-                continue;
-            }
-            s.push_str(&format!("{}: {}\n", path.to_str().unwrap(), diff_type));
-        }
-        write!(f, "{}", s)
-    }
-}
 
 // TODO: prolly doing alot of unecessary shit here
 /// Construct a diff from the local dot directory
@@ -56,35 +16,35 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
     // Check if the local config exists in the working directory
     let working_local_dot_path = working_dot_dir(working_dir.clone())?;
 
-    // Read the local dot directory for a changelog -- this is the base
-    let local_dot_changelog_path = working_local_dot_path.join(DEFAULT_LOCAL_DOT_CHANGELOG);
+    // Read the local dot directory for a change_log -- this is the base
+    let local_dot_change_log_path = working_local_dot_path.join(DEFAULT_LOCAL_DOT_CHANGELOG);
 
     // The files we know about from our last pull
-    let mut base = match std::fs::read_to_string(local_dot_changelog_path.clone()) {
+    let mut base = match std::fs::read_to_string(local_dot_change_log_path.clone()) {
         Ok(s) => {
-            let changelog: Changelog = serde_json::from_str(&s)?;
-            changelog
+            let change_log: ChangeLog = serde_json::from_str(&s)?;
+            change_log
         }
         Err(_) => {
-            tracing::info!("No changelog found");
+            tracing::info!("No change_log found");
             // TODO: this should generate an error
-            BTreeMap::new()
+            ChangeLog::new()
         }
     };
 
     let mut update = base.clone();
 
-    // Insert the root directory hash into the changelog for comparison
+    // Insert the root directory hash into the change_log for comparison
     // This should always just get matched out and removed
     base.insert(
         PathBuf::from(""),
-        (DIR_HASH_LABEL.to_string(), DiffType::Base),
+        (DIR_HASH_LABEL.to_string(), ChangeType::Base),
     );
 
     // Read the working directory structure into a fs-tree
     let next = next_fs_tree(working_dir.clone())?;
 
-    // Iterate over the path-sorted changelog and the fs-tree in order to diff
+    // Iterate over the path-sorted change_log and the fs-tree in order to diff
     let mut base_iter = base.iter();
     let mut next_iter = next.iter();
 
@@ -99,15 +59,15 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                 // If the base comes before then this file was removed
                 // strip off the base item and log the removal
                 if base_path < &next_path {
-                    // if !working_dir.join(base_path).is_dir() {
                     let working_base_path = working_dir.clone().join(base_path);
                     if !working_base_path.is_dir() {
                         match base_type {
-                            DiffType::Added => {
+                            ChangeType::Added => {
                                 update.remove(base_path);
                             }
                             _ => {
-                                update.insert(base_path.clone(), (blank_hash(), DiffType::Removed));
+                                update
+                                    .insert(base_path.clone(), (blank_hash(), ChangeType::Removed));
                             }
                         }
                     }
@@ -121,7 +81,7 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                     let working_next_path = working_dir.clone().join(next_path.clone());
                     if !working_next_path.is_dir() {
                         let hash = blake3_hash_file(working_next_path)?;
-                        update.insert(next_path.clone(), (hash.clone(), DiffType::Added));
+                        update.insert(next_path.clone(), (hash.clone(), ChangeType::Added));
                     }
                     next_next = next_iter.next();
                     continue;
@@ -137,8 +97,20 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                         // strip off the next item and log the modification
                         let next_hash = blake3_hash_file(working_next_path)?;
                         if base_hash != &next_hash {
-                            update
-                                .insert(base_path.clone(), (next_hash.clone(), DiffType::Modified));
+                            match base_type {
+                                ChangeType::Added => {
+                                    update.insert(
+                                        base_path.clone(),
+                                        (next_hash.clone(), ChangeType::Added),
+                                    );
+                                }
+                                _ => {
+                                    update.insert(
+                                        base_path.clone(),
+                                        (next_hash.clone(), ChangeType::Modified),
+                                    );
+                                }
+                            }
                         }
                     }
 
@@ -153,7 +125,7 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                 let working_next_path = working_dir.clone().join(next_path.clone());
                 if !working_next_path.is_dir() {
                     let hash = blake3_hash_file(working_next_path)?;
-                    update.insert(next_path.clone(), (hash.clone(), DiffType::Added));
+                    update.insert(next_path.clone(), (hash.clone(), ChangeType::Added));
                 }
                 next_next = next_iter.next();
                 continue;
@@ -164,11 +136,11 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                 let working_base_path = working_dir.clone().join(base_path);
                 if !working_base_path.is_dir() {
                     match base_type {
-                        DiffType::Added => {
+                        ChangeType::Added => {
                             update.remove(base_path);
                         }
                         _ => {
-                            update.insert(base_path.clone(), (blank_hash(), DiffType::Removed));
+                            update.insert(base_path.clone(), (blank_hash(), ChangeType::Removed));
                         }
                     }
                 }
@@ -182,10 +154,10 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
         }
     }
 
-    // Write the changelog to disk
-    let mut file = std::fs::File::create(local_dot_changelog_path)?;
-    let changelog = serde_json::to_string(&update)?;
-    file.write_all(changelog.as_bytes())?;
+    // Write the change_log to disk
+    let mut file = std::fs::File::create(local_dot_change_log_path)?;
+    let change_log = serde_json::to_string(&update)?;
+    file.write_all(change_log.as_bytes())?;
 
     Ok(())
 }
@@ -220,9 +192,7 @@ fn blank_hash() -> String {
 
 #[derive(Debug, thiserror::Error)]
 pub enum DiffError {
-    #[error("missing dot path")]
-    MissingDotPath(PathBuf),
-    #[error("could not read changelog: {0}")]
+    #[error("could not read change_log: {0}")]
     ReadChanges(#[from] serde_json::Error),
     #[error("is not a directory")]
     NotADirectory,

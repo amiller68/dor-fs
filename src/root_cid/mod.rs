@@ -1,3 +1,3 @@
 mod client;
 
-pub use client::{Client, ClientError, EthRemote};
+pub use client::{EthClient, EthClientError, EthRemote};

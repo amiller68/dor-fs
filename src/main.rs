@@ -1,11 +1,12 @@
 #[cfg(not(target_arch = "wasm32"))]
-fn main() {
+#[tokio::main]
+async fn main() {
     use krondor_fs::prelude::App;
 
-    App::run();
+    App::run().await;
 }
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
-    panic!("krondor-fs is not supported on wasm32")
+    panic!("dor-fs is not supported on wasm32")
 }

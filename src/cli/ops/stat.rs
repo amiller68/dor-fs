@@ -1,20 +1,13 @@
-use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use super::DisaplyableChangelog;
-use crate::cli::config::{working_dot_dir, Config, ConfigError, DEFAULT_LOCAL_DOT_CHANGELOG};
+use super::change_log::DisplayableChangeLog;
+use super::utils::load_change_log;
 
-pub fn stat(_config: &Config, working_dir: PathBuf) -> Result<DisaplyableChangelog, StatError> {
-    let working_dot_dir_path = working_dot_dir(working_dir.clone())?;
-    let changelog =
-        match std::fs::read_to_string(working_dot_dir_path.join(DEFAULT_LOCAL_DOT_CHANGELOG)) {
-            Ok(s) => serde_json::from_str(&s)?,
-            Err(_) => {
-                tracing::info!("No changelog found");
-                BTreeMap::new()
-            }
-        };
-    Ok(DisaplyableChangelog(changelog))
+use crate::cli::config::{Config, ConfigError};
+
+pub fn stat(_config: &Config, working_dir: PathBuf) -> Result<DisplayableChangeLog, StatError> {
+    let change_log = load_change_log(working_dir)?;
+    Ok(DisplayableChangeLog(change_log))
 }
 
 #[derive(Debug, thiserror::Error)]

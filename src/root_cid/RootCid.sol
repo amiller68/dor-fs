@@ -34,8 +34,9 @@ contract RootCid is AccessControl {
   }
 
   // Set the CID of the blog - restricted to owner
-  function update(bytes32 _cid) public { 
+  function update(bytes32 previous_cid, bytes32 _cid) public {
     require(hasRole(WRITER_ROLE, msg.sender));
+    require(previous_cid == cid);
     cid = _cid;
     emit updated(cid);
   }

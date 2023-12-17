@@ -9,6 +9,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+pub use ipfs_api_backend_hyper::IpfsApi;
+
 /// A wrapper around a gateway url
 pub struct IpfsGateway(Url);
 
@@ -25,10 +27,7 @@ impl IpfsGateway {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 /// A remote connection to an ipfs node
 pub struct IpfsRemote {
-    pub scheme: String,
-    pub host: String,
-    pub port: u16,
-    pub creds: Option<(String, String)>,
+    pub url: String,
     pub gateway_url: Option<String>,
 }
 
@@ -39,11 +38,15 @@ impl TryFrom<IpfsRemote> for IpfsClient {
     type Error = IpfsError;
 
     fn try_from(remote: IpfsRemote) -> Result<Self, IpfsError> {
-        let client = HyperIpfsClient::from_host_and_port(
-            Scheme::try_from(remote.scheme.as_str())?,
-            &remote.host,
-            remote.port,
-        )?;
+        let url = Url::parse(&remote.url)?;
+        let scheme = Scheme::try_from(url.scheme())?;
+        let username = url.username();
+        let password = url.password().unwrap_or("");
+        let host_str = url.host_str().unwrap();
+        let port = url.port().unwrap_or(5001);
+
+        let client = HyperIpfsClient::from_host_and_port(scheme, host_str, port)?
+            .with_credentials(username, password);
         Ok(Self(client))
     }
 }

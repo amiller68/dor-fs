@@ -2,32 +2,39 @@ use std::fmt::{self, Display};
 use std::path::PathBuf;
 
 pub use super::args::{Args, Command, Parser};
-use super::config::{Config, ConfigError};
-use super::ops::{diff, health, stat, DiffError, HealthError, StatError};
+use super::config::{configure, Config, ConfigError};
+use super::ops::{
+    diff, health, push, stage, stat, DiffError, HealthError, PushError, StageError, StatError,
+};
 
 pub struct App;
 
 impl App {
-    pub fn run() {
-        capture_error(Self::run_result());
+    pub async fn run() {
+        capture_error(Self::run_result().await);
     }
 
-    pub fn run_result() -> Result<(), AppError> {
+    async fn run_result() -> Result<(), AppError> {
         let args = Args::parse();
         let config = Config::parse(&args)?;
         match args.command {
             Command::Init => {
                 // i don't do anything lol
             }
-            Command::Health => {
-                health(&config)?;
+            Command::Configure { subcommand } => {
+                configure(&config, subcommand)?;
             }
-            Command::Deploy => {
-                // deploy(&config)?;
+            Command::Health { dir} => {
+                let working_dir = working_dir(dir)?;
+                health(&config, working_dir)?;
+            }
+            Command::Wipe { dir: _ } => {
+                // wipe(&config, dir)?;
             }
             Command::Clone { dir: _ } => {
                 // clone(&config, dir)?;
             }
+            // TODO: this is more like 'add'
             Command::Diff { dir } => {
                 let working_dir = working_dir(dir)?;
                 diff(&config, working_dir)?;
@@ -35,13 +42,16 @@ impl App {
             Command::Stat { dir } => {
                 let working_dir = working_dir(dir)?;
                 let diff = stat(&config, working_dir)?;
-                println!("{}", diff);
+                print!("{}", diff);
             }
-            Command::Stage { dir: _ } => {
-                // push(&config, dir)?;
+            // TODO: this is more like 'commit'
+            Command::Stage { dir } => {
+                let working_dir = working_dir(dir)?;
+                stage(&config, working_dir).await?;
             }
-            Command::Push { dir: _ } => {
-                // push(&config, dir)?;
+            Command::Push { dir } => {
+                let working_dir = working_dir(dir)?;
+                push(&config, working_dir).await?;
             }
         }
         Ok(())
@@ -50,18 +60,14 @@ impl App {
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    // #[error("config error")]
     Config(#[from] ConfigError),
-    // #[error("fs-tree error: {0}")]
     FsTree(#[from] fs_tree::Error),
-    // #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("health error: {0}")]
     Health(#[from] HealthError),
-    // #[error("stat error: {0}")]
     Stat(#[from] StatError),
-    // #[error("diff error: {0}")]
     Diff(#[from] DiffError),
+    Stage(#[from] StageError),
+    Push(#[from] PushError),
 }
 
 fn capture_error<T>(result: Result<T, AppError>) {
