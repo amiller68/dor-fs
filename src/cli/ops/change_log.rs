@@ -3,6 +3,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
+use cid::Cid;
 
 // TODO: this type isn't quite right
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -27,10 +28,10 @@ impl std::fmt::Display for ChangeType {
 
 /// Tracks what files are in the local clone and their hashes
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct ChangeLog(BTreeMap<PathBuf, (String, ChangeType)>);
+pub struct ChangeLog(BTreeMap<PathBuf, (Cid, ChangeType)>);
 
 impl Deref for ChangeLog {
-    type Target = BTreeMap<PathBuf, (String, ChangeType)>;
+    type Target = BTreeMap<PathBuf, (Cid, ChangeType)>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

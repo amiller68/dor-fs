@@ -1,5 +1,5 @@
-mod dor_fs;
-mod item;
+mod dor_store;
+mod object;
 
-pub use dor_fs::DorFs;
-pub use item::{Item, ItemSet};
+pub use dor_store::DorStore;
+pub use object::Object;

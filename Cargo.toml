@@ -1,5 +1,5 @@
 [package]
-name = "krondor-fs"
+name = "dor-store"
 version = "0.1.0"
 edition = "2021"
 
@@ -17,8 +17,10 @@ clap = { version = "^4", features = ["derive"] }
 dotenvy = "0.15.7"
 ethers = { version =  "2.0.10", features = ["rustls"] }
 fs-tree = "0.5.5"
+futures-util = "0.3.29"
 http = "^0.2"
-ipfs-api-backend-hyper = "0.6.0"
+ipfs-api-backend-hyper = { version = "^0.6", features = ["with-hyper-tls"] }
+libipld = { version = "0.16.0", features = ["serde-codec"] }
 pico-args = "0.5.0"
 rand = "0.8.5"
 reqwest = { version = "0.11.20", features = ["multipart"] }

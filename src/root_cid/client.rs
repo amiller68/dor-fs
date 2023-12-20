@@ -11,9 +11,11 @@ use ethers::{
     types::{Address, TransactionRequest},
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 const ABI_STRING: &str = include_str!("../../out/RootCid.sol/RootCid.json");
 
+// TODO: fancy looking display
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthRemote {
     pub rpc: String,
@@ -39,7 +41,8 @@ impl TryFrom<EthRemote> for EthClient {
             .address
             .parse()
             .map_err(|_| EthClientError::Default("Invalid Address".to_string()))?;
-        let abi: Abi = serde_json::from_str(ABI_STRING)?;
+        let out_value: Value = serde_json::from_str(ABI_STRING)?;
+        let abi: Abi = serde_json::from_value(out_value["abi"].clone())?;
         let contract = Contract::new(address, abi, Arc::new(client.clone()));
         Ok(Self {
             client,

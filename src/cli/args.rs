@@ -69,6 +69,11 @@ pub enum Command {
         #[clap(short, long)]
         dir: Option<String>,
     },
+    /// Pull the remote to the local dot directory
+    Pull {
+        #[clap(short, long)]
+        dir: Option<String>,
+    },
 }
 
 #[derive(Debug, Subcommand, Clone, PartialEq)]
@@ -83,6 +88,10 @@ pub enum ConfigureSubcommand {
         #[clap(subcommand)]
         subcommand: ConfigureSetSubcommand,
     },
+    /// List all configurations
+    Ls,
+    /// Show the current configuration
+    Show,
 }
 
 #[derive(Debug, Subcommand, Clone, PartialEq)]

@@ -1,6 +1,9 @@
-# <h1 align="center"> dor-fs </h1>
+# <h1 align="center"> dor-store </h1>
 
 dumb ol' reliable file system
+
+TODO:
+- [ ] utilize dag-cbor for file system
 
 <!-- **Template repository for getting started quickly with Foundry projects** -->
 <!-- 
@@ -39,4 +42,4 @@ contract ContractTest is Test {
 ## Development
 
 This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
-# krondor-fs -->
+# dor-store -->

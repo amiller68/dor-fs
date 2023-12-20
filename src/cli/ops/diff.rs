@@ -2,7 +2,9 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use fs_tree::FsTree;
+use cid::Cid;
 
+use crate::ipfs::{IpfsApi, IpfsClient, hash_file_request, IpfsClientError};
 use crate::cli::config::{Config, ConfigError, DEFAULT_LOCAL_DOT_CHANGELOG};
 
 use super::change_log::{ChangeLog, ChangeType};
@@ -12,7 +14,7 @@ const DIR_HASH_LABEL: &str = "DIRERCTORY";
 
 // TODO: prolly doing alot of unecessary shit here
 /// Construct a diff from the local dot directory
-pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
+pub async fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
     // Check if the local config exists in the working directory
     let working_local_dot_path = working_dot_dir(working_dir.clone())?;
 
@@ -38,7 +40,7 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
     // This should always just get matched out and removed
     base.insert(
         PathBuf::from(""),
-        (DIR_HASH_LABEL.to_string(), ChangeType::Base),
+        (Cid::default(), ChangeType::Base),
     );
 
     // Read the working directory structure into a fs-tree
@@ -55,9 +57,9 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
         match (next_next.clone(), base_next) {
             // If these are both something we got some work to do
             (Some((_next_tree, next_path)), Some((base_path, (base_hash, base_type)))) => {
-                // For each item, assuming we stay aligned on a sorted list of paths:
+                // For each object, assuming we stay aligned on a sorted list of paths:
                 // If the base comes before then this file was removed
-                // strip off the base item and log the removal
+                // strip off the base object and log the removal
                 if base_path < &next_path {
                     let working_base_path = working_dir.clone().join(base_path);
                     if !working_base_path.is_dir() {
@@ -67,7 +69,7 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                             }
                             _ => {
                                 update
-                                    .insert(base_path.clone(), (blank_hash(), ChangeType::Removed));
+                                    .insert(base_path.clone(), (Cid::default(), ChangeType::Removed));
                             }
                         }
                     }
@@ -76,26 +78,26 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                 }
 
                 // If next comes before base then the file was added
-                // strip off the next item and log the addition
+                // strip off the next object and log the addition
                 if &next_path < base_path {
                     let working_next_path = working_dir.clone().join(next_path.clone());
                     if !working_next_path.is_dir() {
-                        let hash = blake3_hash_file(working_next_path)?;
+                        let hash = file_cid(working_next_path).await?;
                         update.insert(next_path.clone(), (hash.clone(), ChangeType::Added));
                     }
                     next_next = next_iter.next();
                     continue;
                 }
 
-                // If they are equal then we are good. Move on to the next items
+                // If they are equal then we are good. Move on to the next objects
                 if &next_path == base_path {
                     // These are either both files or both directories
                     // If they are both files then we need to compare hashes
                     let working_next_path = working_dir.clone().join(next_path.clone());
                     if !working_next_path.is_dir() {
                         // If the hashes are different then the file was modified
-                        // strip off the next item and log the modification
-                        let next_hash = blake3_hash_file(working_next_path)?;
+                        // strip off the next object and log the modification
+                        let next_hash = file_cid(working_next_path).await?;
                         if base_hash != &next_hash {
                             match base_type {
                                 ChangeType::Added => {
@@ -124,7 +126,7 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
             (Some((_next_tree, next_path)), None) => {
                 let working_next_path = working_dir.clone().join(next_path.clone());
                 if !working_next_path.is_dir() {
-                    let hash = blake3_hash_file(working_next_path)?;
+                    let hash = file_cid(working_next_path).await?;
                     update.insert(next_path.clone(), (hash.clone(), ChangeType::Added));
                 }
                 next_next = next_iter.next();
@@ -140,7 +142,7 @@ pub fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffError> {
                             update.remove(base_path);
                         }
                         _ => {
-                            update.insert(base_path.clone(), (blank_hash(), ChangeType::Removed));
+                            update.insert(base_path.clone(), (Cid::default(), ChangeType::Removed));
                         }
                     }
                 }
@@ -177,17 +179,12 @@ fn next_fs_tree(working_dir_path: PathBuf) -> Result<FsTree, DiffError> {
     Ok(next)
 }
 
-// TODO: is this using threads?
-fn blake3_hash_file(path: PathBuf) -> Result<String, DiffError> {
-    let mut file = std::fs::File::open(path)?;
-    let mut hasher = blake3::Hasher::new();
-    std::io::copy(&mut file, &mut hasher)?;
-    let hash = hasher.finalize();
-    Ok(hash.to_hex().to_string())
-}
-
-fn blank_hash() -> String {
-    blake3::Hash::from([0; 32]).to_hex().to_string()
+pub async fn file_cid(path: PathBuf) -> Result<Cid, DiffError> {
+    let client = IpfsClient::default();
+    let file = std::fs::File::open(path)?;
+    let add_response = client.add_with_options(file, hash_file_request()).await?;
+    let cid = Cid::try_from(add_response.hash)?;
+    Ok(cid)
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -202,4 +199,8 @@ pub enum DiffError {
     Io(#[from] std::io::Error),
     #[error("invalid config: {0}")]
     Config(#[from] ConfigError),
+    #[error("ipfs error: {0}")]
+    Ipfs(#[from] IpfsClientError),
+    #[error("cid error: {0}")]
+    Cid(#[from] cid::Error),
 }

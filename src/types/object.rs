@@ -8,27 +8,31 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Default, Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct ItemSet(BTreeMap<PathBuf, Item>);
+/// A set of Objects within DorFS
+pub struct ObjectSet(BTreeMap<PathBuf, Object>);
 
-impl Deref for ItemSet {
-    type Target = BTreeMap<PathBuf, Item>;
+impl Deref for ObjectSet {
+    type Target = BTreeMap<PathBuf, Object>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl DerefMut for ItemSet {
+impl DerefMut for ObjectSet {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
+// TODO: this needs to be more idiomatically IPLD (should utilize links and IPLD types)
+/// A single Object with DorFS metadata
+/// - created_at: the time the file was added to the DorFS
+/// - updated_at: the time the file was last updated
+/// - cid: the cid of the file (this should be an IPLD link)
+/// - metadata: the metadata of the file (this should be an IPLD Map)
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Item {
-    name: String,
-    path: PathBuf,
-
+pub struct Object {
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 
@@ -36,18 +40,9 @@ pub struct Item {
     metadata: Value,
 }
 
-impl Item {
-    pub fn new(path: PathBuf, cid: Cid) -> Self {
-        let name = path
-            .file_name()
-            .unwrap_or_else(|| panic!("could not get file name for path: {:?}", path))
-            .to_str()
-            .unwrap_or_else(|| panic!("could not convert file name to str: {:?}", path))
-            .to_string();
-
+impl Object {
+    pub fn new(cid: Cid) -> Self {
         Self {
-            name,
-            path,
             created_at: Utc::now(),
             updated_at: Utc::now(),
             cid,
@@ -61,15 +56,6 @@ impl Item {
             self.metadata = metadata;
         }
         self.updated_at = Utc::now();
-    }
-}
-
-impl Item {
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-    pub fn path(&self) -> &PathBuf {
-        &self.path
     }
 
     pub fn created_at(&self) -> &DateTime<Utc> {

@@ -2,9 +2,9 @@ use std::fmt::{self, Display};
 use std::path::PathBuf;
 
 pub use super::args::{Args, Command, Parser};
-use super::config::{configure, Config, ConfigError};
+use super::config::{handle_config_subcommand, Config, ConfigError};
 use super::ops::{
-    diff, health, push, stage, stat, DiffError, HealthError, PushError, StageError, StatError,
+    diff, health, push, stage, stat, pull, DiffError, HealthError, PushError, StageError, StatError, PullError
 };
 
 pub struct App;
@@ -22,9 +22,9 @@ impl App {
                 // i don't do anything lol
             }
             Command::Configure { subcommand } => {
-                configure(&config, subcommand)?;
+                handle_config_subcommand(&config, subcommand)?;
             }
-            Command::Health { dir} => {
+            Command::Health { dir } => {
                 let working_dir = working_dir(dir)?;
                 health(&config, working_dir)?;
             }
@@ -37,7 +37,7 @@ impl App {
             // TODO: this is more like 'add'
             Command::Diff { dir } => {
                 let working_dir = working_dir(dir)?;
-                diff(&config, working_dir)?;
+                diff(&config, working_dir).await?;
             }
             Command::Stat { dir } => {
                 let working_dir = working_dir(dir)?;
@@ -52,6 +52,10 @@ impl App {
             Command::Push { dir } => {
                 let working_dir = working_dir(dir)?;
                 push(&config, working_dir).await?;
+            }
+            Command::Pull { dir } => {
+                let working_dir = working_dir(dir)?;
+                pull(&config, working_dir).await?;
             }
         }
         Ok(())
@@ -68,6 +72,7 @@ pub enum AppError {
     Diff(#[from] DiffError),
     Stage(#[from] StageError),
     Push(#[from] PushError),
+    Pull(#[from] PullError),
 }
 
 fn capture_error<T>(result: Result<T, AppError>) {

@@ -1,63 +1,74 @@
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::io::Cursor;
+use std::fs::File;
 
 use cid::Cid;
+use super::utils::{load_root_cid, save_root_cid, load_dor_store, save_dor_store, working_dot_dir};
 
-use super::utils::{load_root_cid, local_dot_dorfs_path, save_root_cid};
+use crate::cli::config::{Config, ConfigError};
+use crate::ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsError, add_file_request};
 
-use crate::cli::config::{Config, ConfigError, DEFAULT_MFS_ROOT};
-use crate::ipfs::{IpfsApi, IpfsClient, IpfsError};
-use crate::root_cid::{EthClient, EthClientError};
-
-// TODO: eth
 pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError> {
-    // let change_log = load_change_log(working_dir.clone())?;
-    let local_ipfs_client = IpfsClient::default();
-    let mfs_root = PathBuf::from(DEFAULT_MFS_ROOT);
+    let remote_ipfs_client = match config.ipfs_remote() {
+        Some(ipfs_remote) => IpfsClient::try_from(ipfs_remote.clone())?,
+        None => {
+            return Err(PushError::MissingIpfsRemote);
+        }
+    };
 
-    // Add the DorFs to the root
-    let dorfs_path = local_dot_dorfs_path()?;
-    let dorfs_file = std::fs::File::open(working_dir.join(dorfs_path.clone()))?;
-    let mfs_path = mfs_root.join(dorfs_path.file_name().unwrap());
-    let mfs_path_str = mfs_path.to_str().unwrap();
+    let mut dor_store = load_dor_store(working_dir.clone())?;
+    // let root_cid = load_root_cid(working_dir.clone())?;
+    let objects = dor_store.objects();
 
-    local_ipfs_client
-        .files_write(&mfs_path_str, true, true, dorfs_file)
-        .await?;
+    // Tell the remote to pin all the objects
+    for (path, object) in objects.iter() {
+        if block_exists(object.cid(), &remote_ipfs_client).await? {
+            continue;
+        }
+        let cid = add_file(&working_dir.join(path), &remote_ipfs_client).await?;
+        if cid != *object.cid() {
+            return Err(PushError::CidMismatch(cid, object.cid().clone()));
+        }
+    }
 
-    let root_stat = local_ipfs_client
-        .files_stat(&mfs_root.to_str().unwrap())
-        .await?;
-    let root_hash = root_stat.hash;
-
-    // let remote_ipfs_client = match config.ipfs_remote() {
-    //     Some(ipfs_remote) => IpfsClient::try_from(ipfs_remote.clone())?,
-    //     None => {
-    //         return Err(PushError::MissingIpfsRemote);
-    //     }
-    // };
-
-    // let remote_root_cid_client = match config.eth_remote() {
-    //     Some(eth_remote) => EthClient::try_from(eth_remote.clone())?,
-    //     None => {
-    //         return Err(PushError::MissingEthRemote);
-    //     }
-    // };
-
-    // Recursive pin the root
-    let remote_root_stat = local_ipfs_client.pin_add(&root_hash, true).await?;
-    let remote_root_hash = remote_root_stat.pins[0].clone();
-    let remote_root_cid = Cid::from_str(&remote_root_hash)?;
-
-    // let previous_root_cid = load_root_cid(working_dir.clone())?;
-
-    // remote_root_cid_client
-    //     .update(previous_root_cid, remote_root_cid)
-    //     .await?;
-
-    save_root_cid(working_dir, &remote_root_cid)?;
-
+    // Now 
+    dor_store.set_previous_root(Cid::default());
+    let dor_store_vec = serde_json::to_vec(&dor_store)?;
+    let dor_store_data = Cursor::new(dor_store_vec);
+    let add_response = remote_ipfs_client.add_with_options(dor_store_data, add_file_request()).await?;
+    let new_root_cid = Cid::from_str(&add_response.hash)?;
+    
+    // TODO: save to eth for later pulling
+    save_root_cid(working_dir.clone(), &new_root_cid)?;
+    save_dor_store(working_dir.clone(), &dor_store)?;
     Ok(())
+}
+
+/// Add a file to the local ipfs node using its path
+async fn add_file(path: &PathBuf, remote_ipfs_client: &IpfsClient) -> Result<Cid, PushError> {
+    let file = File::open(path)?;
+    let add_response = remote_ipfs_client.add_with_options(file, add_file_request()).await?;
+    let cid = Cid::try_from(add_response.hash)?;
+    Ok(cid)
+}
+
+/// Stat the cid on the remote ipfs node
+/// Returns true if the cid exists on the remote ipfs node
+async fn block_exists(cid: &Cid, remote_ipfs_client: &IpfsClient) -> Result<bool, PushError> {
+    let cid = cid.to_string();
+    let stat_response = remote_ipfs_client.block_stat(&cid);
+    match stat_response.await {
+        Ok(_) => Ok(true),
+        Err(IpfsClientError::Api(api_error)) => {
+            if api_error.code == 0 && api_error.message == "blockservice: key not found" {
+                Ok(false)
+            } else {
+                Err(PushError::IpfsBackend(api_error.into()))
+            }
+        }
+        Err(e) => Err(PushError::IpfsBackend(e)),
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -66,8 +77,10 @@ pub enum PushError {
     Config(#[from] ConfigError),
     #[error("cid error: {0}")]
     Cid(#[from] cid::Error),
-    #[error("eth client error: {0}")]
-    EthClient(#[from] EthClientError),
+    #[error("cid mismatch: {0} != {1}")]
+    CidMismatch(Cid, Cid),
+    // #[error("eth client error: {0}")]
+    // EthClient(#[from] EthClientError),
     #[error("fs-tree error: {0}")]
     FsTree(#[from] fs_tree::Error),
     #[error("io error: {0}")]

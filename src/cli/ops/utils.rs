@@ -8,7 +8,7 @@ use crate::cli::config::{
     ConfigError, DEFAULT_LOCAL_DOT_CHANGELOG, DEFAULT_LOCAL_DOT_DIR, DEFAULT_LOCAL_DOT_DORFS,
     DEFAULT_LOCAL_DOT_ROOTCID,
 };
-use crate::types::DorFs;
+use crate::types::DorStore;
 
 pub fn local_dot_dorfs_path() -> Result<PathBuf, ConfigError> {
     let local_dot_dorfs_path = dot_dir().join(DEFAULT_LOCAL_DOT_DORFS);
@@ -60,43 +60,23 @@ pub fn save_change_log(path: PathBuf, change_log: &ChangeLog) -> Result<(), Conf
     Ok(())
 }
 
-// /// Load the StageLog from the local dot directory
-// pub fn load_stage_log(path: PathBuf) -> Result<ChangeLog, ConfigError> {
-//     let working_dot_dir_path = working_dot_dir(path)?;
-//     let stage_log_path = working_dot_dir_path.join(DEFAULT_LOCAL_DOT_STAGELOG);
-//     let stage_log = match std::fs::read_to_string(stage_log_path) {
-//         Ok(s) => serde_json::from_str(&s)?,
-//         Err(_) => ChangeLog::new(),
-//     };
-//     Ok(stage_log)
-// }
-
-// /// Save the StageLog to the local dot directory
-// pub fn save_stage_log(path: PathBuf, stage_log: &ChangeLog) -> Result<(), ConfigError> {
-//     let working_dot_dir_path = working_dot_dir(path)?;
-//     let stage_log_path = working_dot_dir_path.join(DEFAULT_LOCAL_DOT_STAGELOG);
-//     let stage_log = serde_json::to_string_pretty(stage_log)?;
-//     std::fs::write(stage_log_path, stage_log)?;
-//     Ok(())
-// }
-
-/// Load the DorFs from the local dot directory
-pub fn load_dor_fs(path: PathBuf) -> Result<DorFs, ConfigError> {
+/// Load the DorStore from the local dot directory
+pub fn load_dor_store(path: PathBuf) -> Result<DorStore, ConfigError> {
     let working_dot_dir_path = working_dot_dir(path)?;
-    let dor_fs_path = working_dot_dir_path.join(DEFAULT_LOCAL_DOT_DORFS);
-    let dor_fs = match std::fs::read_to_string(dor_fs_path) {
+    let dor_store_path = working_dot_dir_path.join(DEFAULT_LOCAL_DOT_DORFS);
+    let dor_store = match std::fs::read_to_string(dor_store_path) {
         Ok(s) => serde_json::from_str(&s)?,
-        Err(_) => DorFs::new(),
+        Err(_) => DorStore::new(),
     };
-    Ok(dor_fs)
+    Ok(dor_store)
 }
 
-/// Save the DorFs to the local dot directory
-pub fn save_dor_fs(path: PathBuf, dor_fs: &DorFs) -> Result<(), ConfigError> {
+/// Save the DorStore to the local dot directory
+pub fn save_dor_store(path: PathBuf, dor_store: &DorStore) -> Result<(), ConfigError> {
     let working_dot_dir_path = working_dot_dir(path)?;
-    let dor_fs_path = working_dot_dir_path.join(DEFAULT_LOCAL_DOT_DORFS);
-    let dor_fs = serde_json::to_string_pretty(dor_fs)?;
-    std::fs::write(dor_fs_path, dor_fs)?;
+    let dor_store_path = working_dot_dir_path.join(DEFAULT_LOCAL_DOT_DORFS);
+    let dor_store = serde_json::to_string_pretty(dor_store)?;
+    std::fs::write(dor_store_path, dor_store)?;
     Ok(())
 }
 

@@ -4,6 +4,7 @@ use std::{
     io::Write,
     path::PathBuf,
 };
+use std::collections::HashMap;
 
 use cid::Cid;
 use ethers::signers::Wallet;
@@ -16,18 +17,17 @@ use crate::root_cid::{
 
 use super::args::{Args, ConfigureCreateSubcommand, ConfigureSetSubcommand, ConfigureSubcommand};
 
-const XDG_PATH: &str = "~/.config/dor-fs";
+const XDG_PATH: &str = "~/.config/dor-store";
 const DEFAULT_CONFIG_NAME: &str = "defaults.json";
 const DEAULT_ETH_REMOTE_CONFIG_DIR: &str = "eth";
 const DEFAULT_IPFS_REMOTE_CONFIG_DIR: &str = "ipfs";
 const DEFAULT_DEVICE_KEYSTORE_NAME: &str = "device-keystore.json";
 pub const DEFAULT_LOCAL_DOT_DIR: &str = ".fs";
 pub const DEFAULT_LOCAL_DOT_CHANGELOG: &str = "change_log.json";
-pub const DEFAULT_LOCAL_DOT_DORFS: &str = "dor_fs.json";
+pub const DEFAULT_LOCAL_DOT_DORFS: &str = "dorfs.json";
 pub const DEFAULT_LOCAL_DOT_ROOTCID: &str = "root_cid";
-pub const DEFAULT_MFS_ROOT: &str = "/dor-fs";
 
-pub fn configure(_config: &Config, subcommand: ConfigureSubcommand) -> Result<(), ConfigError> {
+pub fn handle_config_subcommand(_config: &Config, subcommand: ConfigureSubcommand) -> Result<(), ConfigError> {
     match subcommand {
         ConfigureSubcommand::Create { subcommand } => match subcommand {
             ConfigureCreateSubcommand::Eth {
@@ -64,6 +64,26 @@ pub fn configure(_config: &Config, subcommand: ConfigureSubcommand) -> Result<()
                 on_disk_config.set_ipfs_remote_alias(alias)?;
             }
         },
+        ConfigureSubcommand::Ls => {
+            let on_disk_config = OnDiskConfig::load()?;
+            let eth_remotes = on_disk_config.eth_remotes()?;
+            let ipfs_remote = on_disk_config.ipfs_remotes()?;
+            println!("Eth remotes:");
+            for (alias, eth_remote) in eth_remotes.iter() {
+                println!("{}: {:?}", alias, eth_remote);
+            }
+            println!("Ipfs remotes:");
+            for (alias, ipfs_remote) in ipfs_remote.iter() {
+                println!("{}: {:?}", alias, ipfs_remote);
+            }
+        }
+        ConfigureSubcommand::Show => {
+            let on_disk_config = OnDiskConfig::load()?;
+            let eth_remote = on_disk_config.eth_remote()?;
+            let ipfs_remote = on_disk_config.ipfs_remote()?;
+            println!("Eth remote: {:?}", eth_remote);
+            println!("Ipfs remote: {:?}", ipfs_remote);
+        }
     }
     Ok(())
 }
@@ -248,8 +268,8 @@ impl OnDiskConfig {
         // Check if the xdg home directory exists. If not then go ahead and initialize everything
         if !xdg_path.exists() {
             create_dir_all(&xdg_path)?;
-            create_dir_all(&eth_remote_path)?;
-            create_dir_all(&ipfs_remote_path)?;
+            create_dir_all(eth_remote_path)?;
+            create_dir_all(ipfs_remote_path)?;
 
             let mut rng = rand::thread_rng();
             // Create a new keystore
@@ -296,8 +316,8 @@ impl OnDiskConfig {
         let eth_remote_dir_path = xdg_path.join(DEAULT_ETH_REMOTE_CONFIG_DIR);
         let eth_remote_config_path = match self.eth_remote_alias.clone() {
             Some(eth_remote_alias) => {
-                let eth_remote_config_path = eth_remote_dir_path.join(eth_remote_alias);
-                eth_remote_config_path
+                
+                eth_remote_dir_path.join(eth_remote_alias)
             }
             None => {
                 return Err(ConfigError::MissingEthRemoteAlias);
@@ -307,6 +327,20 @@ impl OnDiskConfig {
         let eth_remote: EthRemote = serde_json::from_str(&eth_remote_config)?;
 
         Ok(eth_remote)
+    }
+
+    /// Get a map of all the eth remotes by alias
+    pub fn eth_remotes(&self) -> Result<HashMap<String, EthRemote>, ConfigError> {
+        let xdg_path = xdg_config_home()?;
+        let eth_remote_dir_path = xdg_path.join(DEAULT_ETH_REMOTE_CONFIG_DIR);
+        let mut eth_remotes = HashMap::new();
+        for entry in std::fs::read_dir(eth_remote_dir_path)? {
+            let entry = entry?;
+            let eth_remote_config = std::fs::read_to_string(entry.path())?;
+            let eth_remote: EthRemote = serde_json::from_str(&eth_remote_config)?;
+            eth_remotes.insert(entry.file_name().into_string().unwrap(), eth_remote);
+        }
+        Ok(eth_remotes)
     }
 
     /// Create a new eth remote configuration using the alias
@@ -339,8 +373,8 @@ impl OnDiskConfig {
         let ipfs_remote_dir_path = xdg_path.join(DEFAULT_IPFS_REMOTE_CONFIG_DIR);
         let ipfs_remote_config_path = match self.ipfs_remote_alias.clone() {
             Some(ipfs_remote_alias) => {
-                let ipfs_remote_config_path = ipfs_remote_dir_path.join(ipfs_remote_alias);
-                ipfs_remote_config_path
+                
+                ipfs_remote_dir_path.join(ipfs_remote_alias)
             }
             None => {
                 return Err(ConfigError::MissingIpfsRemoteAlias);
@@ -350,6 +384,20 @@ impl OnDiskConfig {
         let ipfs_remote: IpfsRemote = serde_json::from_str(&ipfs_remote_config)?;
 
         Ok(ipfs_remote)
+    }
+
+    /// Get a map of all the ipfs remotes by alias
+    pub fn ipfs_remotes(&self) -> Result<HashMap<String, IpfsRemote>, ConfigError> {
+        let xdg_path = xdg_config_home()?;
+        let ipfs_remote_dir_path = xdg_path.join(DEFAULT_IPFS_REMOTE_CONFIG_DIR);
+        let mut ipfs_remotes = HashMap::new();
+        for entry in std::fs::read_dir(ipfs_remote_dir_path)? {
+            let entry = entry?;
+            let ipfs_remote_config = std::fs::read_to_string(entry.path())?;
+            let ipfs_remote: IpfsRemote = serde_json::from_str(&ipfs_remote_config)?;
+            ipfs_remotes.insert(entry.file_name().into_string().unwrap(), ipfs_remote);
+        }
+        Ok(ipfs_remotes)
     }
 
     /// Create a new ipfs remote configuration using the alias
