@@ -3,19 +3,30 @@ use std::io::Cursor;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use super::utils::{load_dor_store, load_root_cid, save_dor_store, save_root_cid, working_dot_dir};
+use super::utils::{load_dor_store, save_dor_store, save_root_cid, load_root_cid};
 use cid::Cid;
 
 use crate::cli::config::{Config, ConfigError};
+use crate::root_cid::{EthClient, EthClientError};
 use crate::ipfs::{add_file_request, IpfsApi, IpfsClient, IpfsClientError, IpfsError};
 
 pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError> {
+    let root_cid = load_root_cid(working_dir.clone())?; 
+    
     let remote_ipfs_client = match config.ipfs_remote() {
         Some(ipfs_remote) => IpfsClient::try_from(ipfs_remote.clone())?,
         None => {
             return Err(PushError::MissingIpfsRemote);
         }
     };
+    let mut eth_client = match config.eth_remote() {
+        Some(eth_remote) => EthClient::try_from(eth_remote.clone())?,
+        None => {
+            return Err(PushError::MissingEthRemote);
+        }
+    };
+    let local_wallet = config.local_wallet()?;
+    let eth_client = eth_client.with_wallet_as_signer(local_wallet)?;
 
     let mut dor_store = load_dor_store(working_dir.clone())?;
     // let root_cid = load_root_cid(working_dir.clone())?;
@@ -32,8 +43,9 @@ pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError
         }
     }
 
-    // Now
-    dor_store.set_previous_root(Cid::default());
+    // Push our linking blocks to the remote, get the new root cid
+    dor_store.set_previous_root(root_cid);
+    // TODO: standardize passing around the dor_store accross the ipfs boundary
     let dor_store_vec = serde_json::to_vec(&dor_store)?;
     let dor_store_data = Cursor::new(dor_store_vec);
     let add_response = remote_ipfs_client
@@ -41,7 +53,9 @@ pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError
         .await?;
     let new_root_cid = Cid::from_str(&add_response.hash)?;
 
-    // TODO: save to eth for later pulling
+    // Push the new root cid to the eth client
+    eth_client.update(root_cid, new_root_cid.clone()).await?;
+
     save_root_cid(working_dir.clone(), &new_root_cid)?;
     save_dor_store(working_dir.clone(), &dor_store)?;
     Ok(())
@@ -83,8 +97,8 @@ pub enum PushError {
     Cid(#[from] cid::Error),
     #[error("cid mismatch: {0} != {1}")]
     CidMismatch(Cid, Cid),
-    // #[error("eth client error: {0}")]
-    // EthClient(#[from] EthClientError),
+    #[error("eth client error: {0}")]
+    EthClient(#[from] EthClientError),
     #[error("fs-tree error: {0}")]
     FsTree(#[from] fs_tree::Error),
     #[error("io error: {0}")]

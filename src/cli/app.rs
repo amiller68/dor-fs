@@ -12,6 +12,7 @@ pub struct App;
 
 impl App {
     pub async fn run() {
+        tracing_subscriber::fmt::init();
         capture_error(Self::run_result().await);
     }
 
@@ -27,7 +28,7 @@ impl App {
             }
             Command::Health { dir } => {
                 let working_dir = working_dir(dir)?;
-                health(&config, working_dir)?;
+                health(&config, working_dir).await?;
             }
             Command::Wipe { dir: _ } => {
                 // wipe(&config, dir)?;

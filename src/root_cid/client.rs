@@ -55,11 +55,8 @@ impl TryFrom<EthRemote> for EthClient {
 
 impl EthClient {
     /// Attach SignerMiddleware to the client
-    pub fn with_signer(&mut self, key: String) -> Result<&Self, EthClientError> {
-        let wallet = key
-            .parse::<LocalWallet>()
-            .map_err(|_| EthClientError::Default("Invalid Key".to_string()))?
-            .with_chain_id(self.chain_id);
+    pub fn with_wallet_as_signer(&mut self, wallet: LocalWallet) -> Result<&Self, EthClientError> {
+        let wallet = wallet.with_chain_id(self.chain_id);
         let signer = SignerMiddleware::new(self.client.clone(), wallet);
         self.signer = Some(signer);
         Ok(self)
@@ -123,6 +120,7 @@ impl EthClient {
             .to(self.contract.address())
             .data(data)
             .chain_id(self.chain_id);
+        // TODO: is this the right return type?
         match self.signer {
             Some(ref signer) => {
                 let signed_tx = signer
@@ -170,24 +168,51 @@ impl From<CidWrapper> for Cid {
 
 impl Tokenizable for CidWrapper {
     fn from_token(token: ethers::abi::Token) -> Result<Self, InvalidOutputType> {
-        let bytes = token
-            .into_fixed_bytes()
-            .ok_or(InvalidOutputType("Invalid Bytes".to_string()))?;
-        let cid = Cid::try_from(bytes).map_err(|_| InvalidOutputType("Invalid CID".to_string()))?;
+        let array = match token {
+            ethers::abi::Token::FixedArray(array) => array,
+            _ => return Err(InvalidOutputType("Invalid Array".to_string())),
+        };
+
+        // Assert that the array has two FixedBytes tokens
+        if array.len() != 2 {
+            return Err(InvalidOutputType("Invalid Array".to_string()));
+        }
+
+        let bytes_1 = match array.get(0) {
+            Some(ethers::abi::Token::FixedBytes(bytes)) => bytes,
+            _ => return Err(InvalidOutputType("Invalid Bytes".to_string())),
+        };
+        let bytes_2 = match array.get(1) {
+            Some(ethers::abi::Token::FixedBytes(bytes)) => bytes,
+            _ => return Err(InvalidOutputType("Invalid Bytes".to_string())),
+        };
+
+        let mut all_bytes = bytes_1.clone();
+        all_bytes.extend(bytes_2);
+
+        let cid = Cid::try_from(all_bytes.as_slice())
+            .map_err(|_| InvalidOutputType("Invalid CID".to_string()))?;
         Ok(Self(cid))
     }
 
     fn into_token(self) -> ethers::abi::Token {
-        let buff = [0u8; 64];
-        let bytes = self
-            .0
-            .to_bytes()
+        // Split the cid into two FixedBytes tokens of 32 bytes each
+        let buff_1 = [0u8; 32];
+        let buff_2 = [0u8; 32];
+        let bytes = self.0.to_bytes();
+        let all_bytes = bytes
             .iter()
-            .chain(buff.iter())
+            .chain(buff_1.iter())
+            .chain(buff_2.iter())
             .take(64)
             .copied()
             .collect::<Vec<u8>>();
-        ethers::abi::Token::FixedBytes(bytes)
+        let (bytes_1, bytes_2) = all_bytes
+            .split_at(32);
+        let token_1 = ethers::abi::Token::FixedBytes(bytes_1.to_vec());
+        let token_2 = ethers::abi::Token::FixedBytes(bytes_2.to_vec());
+        // Return a FixedArray token of the two FixedBytes tokens
+        ethers::abi::Token::FixedArray(vec![token_1, token_2])
     }
 }
 

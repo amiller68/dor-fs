@@ -7,7 +7,7 @@ use std::{
 };
 
 use cid::Cid;
-use ethers::signers::Wallet;
+use ethers::signers::{Wallet, LocalWallet};
 use serde::{Deserialize, Serialize};
 
 use crate::ipfs::{IpfsClient, IpfsError, IpfsRemote};
@@ -213,8 +213,31 @@ impl Config {
         })
     }
 
-    pub fn device_keystore_path(&self) -> Option<PathBuf> {
-        self.device_keystore_path.clone()
+    // pub fn device_keystore_path(&self) -> Option<PathBuf> {
+    //     self.device_keystore_path.clone()
+    // }
+    /// Attempt to construct a signer from the admin key if it exists
+    /// Otherwise fall back on the device keystore
+    pub fn local_wallet(&self) -> Result<LocalWallet, ConfigError> {
+        match self.admin_key_string.clone() {
+            Some(admin_key_string) => {
+                let wallet = admin_key_string.parse::<LocalWallet>()?;
+                Ok(wallet)
+            }
+            None => {
+                let device_keystore_path = match self.device_keystore_path.clone() {
+                    Some(device_keystore_path) => device_keystore_path,
+                    None => {
+                        return Err(ConfigError::MissingDotPath(
+                            DEFAULT_DEVICE_KEYSTORE_NAME.into(),
+                        ));
+                    }
+                };
+                // TODO: password workflow
+                let wallet = LocalWallet::decrypt_keystore(&device_keystore_path, "")?;
+                Ok(wallet)
+            }
+        }
     }
 
     pub fn local_ipfs_remote(&self) -> IpfsRemote {

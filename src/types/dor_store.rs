@@ -11,7 +11,7 @@ use super::object::{Object, ObjectSet};
 /// - object_set: a set of Objects within the DorFS
 /// - previous_root: the cid of the previous root of the DorFS
 /// - version: the version of the DorFS
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct DorStore {
     object_set: ObjectSet,
     previous_root: Cid,
@@ -58,12 +58,18 @@ impl DorStore {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Version {
     pub build_profile: String,
     pub build_features: String,
     pub repo_version: String,
     pub version: String,
+}
+
+impl Default for Version {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Version {

@@ -10,13 +10,16 @@ use crate::root_cid::{EthClient, EthClientError};
 use crate::types::DorStore;
 
 use super::diff::{file_cid, DiffError};
-use super::utils::{load_root_cid, save_dor_store};
+use super::utils::{save_root_cid, save_dor_store, load_root_cid, load_dor_store};
 
 // TODO: eth
 pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError> {
-    let root_cid = load_root_cid(working_dir.clone())?;
-    // TODO: is it preferrable to use gateway or api?
-    let local_ipfs_client = IpfsClient::default();
+    let eth_client = match config.eth_remote() {
+        Some(eth_remote) => EthClient::try_from(eth_remote.clone())?,
+        None => {
+            return Err(PullError::MissingEthRemote);
+        }
+    };    
     let remote_ipfs_client = match config.ipfs_remote() {
         Some(ipfs_remote) => IpfsClient::try_from(ipfs_remote.clone())?,
         None => {
@@ -24,7 +27,18 @@ pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError
         }
     };
 
-    let dor_store = pull_dor_store(&root_cid, &local_ipfs_client, &remote_ipfs_client).await?;
+    let _root_cid = load_root_cid(working_dir.clone())?;
+    let root_cid = eth_client.read().await?;
+    if root_cid == Cid::default() || root_cid == _root_cid {
+        tracing::info!("root cid is up to date");
+    }
+    
+    let _dor_store = load_dor_store(working_dir.clone())?;
+    let dor_store = pull_dor_store(&root_cid, &remote_ipfs_client).await?;
+    if dor_store == _dor_store {
+        tracing::info!("dor store is up to date");
+    }
+    
     let objects = dor_store.objects();
 
     for (path, object) in objects.iter() {
@@ -32,9 +46,8 @@ pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError
             continue;
         }
 
-        tracing::info!("pulling: {:?}", path);
-        let block_data = pull_block(object.cid(), &local_ipfs_client, &remote_ipfs_client).await?;
-        // mkdir if needed
+        // Download the block from the remote, mkdir -p the path, write the block to the path
+        let block_data = pull_block(object.cid(),  &remote_ipfs_client).await?;
         let mut object_path = working_dir.join(path);
         object_path.pop();
         std::fs::create_dir_all(object_path)?;
@@ -43,16 +56,15 @@ pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError
     }
 
     save_dor_store(working_dir.clone(), &dor_store)?;
-
+    save_root_cid(working_dir.clone(), &root_cid)?;
     Ok(())
 }
 
 async fn pull_dor_store(
     root_cid: &Cid,
-    local_ipfs_client: &IpfsClient,
     remote_ipfs_client: &IpfsClient,
 ) -> Result<DorStore, PullError> {
-    let dor_store_data = pull_block(root_cid, local_ipfs_client, remote_ipfs_client).await?;
+    let dor_store_data = pull_block(root_cid, remote_ipfs_client).await?;
     let dor_store = serde_json::from_slice(&dor_store_data)?;
     Ok(dor_store)
 }
@@ -74,7 +86,6 @@ async fn path_needs_pull(path: &PathBuf, cid: &Cid) -> Result<bool, PullError> {
 /// Return the block data as a Vec<u8>
 async fn pull_block(
     cid: &Cid,
-    _local_ipfs_client: &IpfsClient,
     remote_ipfs_client: &IpfsClient,
 ) -> Result<Vec<u8>, PullError> {
     let block_stream = remote_ipfs_client.block_get(&cid.to_string());

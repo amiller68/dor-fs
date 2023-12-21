@@ -18,7 +18,6 @@ contract RootCid is AccessControl {
     cid = _cid;
   }
   
-  
   event updated(bytes32[2] cid);
 
   /* Permissions */
