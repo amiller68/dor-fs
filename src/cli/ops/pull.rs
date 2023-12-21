@@ -1,16 +1,16 @@
-use std::path::PathBuf;
 use std::io::Write;
+use std::path::PathBuf;
 
-use futures_util::TryStreamExt;
 use cid::Cid;
+use futures_util::TryStreamExt;
 
-use crate::types::DorStore;
 use crate::cli::config::{Config, ConfigError};
-use crate::ipfs::{IpfsApi, IpfsClient, IpfsError, IpfsClientError};
+use crate::ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsError};
 use crate::root_cid::{EthClient, EthClientError};
+use crate::types::DorStore;
 
-use super::utils::{load_root_cid, save_dor_store};
 use super::diff::{file_cid, DiffError};
+use super::utils::{load_root_cid, save_dor_store};
 
 // TODO: eth
 pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError> {
@@ -44,10 +44,14 @@ pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError
 
     save_dor_store(working_dir.clone(), &dor_store)?;
 
-    Ok(())    
+    Ok(())
 }
 
-async fn pull_dor_store(root_cid: &Cid, local_ipfs_client: &IpfsClient, remote_ipfs_client: &IpfsClient) -> Result<DorStore, PullError> {
+async fn pull_dor_store(
+    root_cid: &Cid,
+    local_ipfs_client: &IpfsClient,
+    remote_ipfs_client: &IpfsClient,
+) -> Result<DorStore, PullError> {
     let dor_store_data = pull_block(root_cid, local_ipfs_client, remote_ipfs_client).await?;
     let dor_store = serde_json::from_slice(&dor_store_data)?;
     Ok(dor_store)
@@ -68,7 +72,11 @@ async fn path_needs_pull(path: &PathBuf, cid: &Cid) -> Result<bool, PullError> {
 // TODO: you should try reading locally first
 /// Attempt to pull a block from the remote
 /// Return the block data as a Vec<u8>
-async fn pull_block(cid: &Cid, _local_ipfs_client: &IpfsClient, remote_ipfs_client: &IpfsClient) -> Result<Vec<u8>, PullError> {
+async fn pull_block(
+    cid: &Cid,
+    _local_ipfs_client: &IpfsClient,
+    remote_ipfs_client: &IpfsClient,
+) -> Result<Vec<u8>, PullError> {
     let block_stream = remote_ipfs_client.block_get(&cid.to_string());
     let block_data = block_stream
         .map_ok(|chunk| chunk.to_vec())

@@ -9,7 +9,7 @@ mod utils;
 
 pub use diff::{diff, DiffError};
 pub use health::{health, HealthError};
+pub use pull::{pull, PullError};
 pub use push::{push, PushError};
 pub use stage::{stage, StageError};
 pub use stat::{stat, StatError};
-pub use pull::{pull, PullError};

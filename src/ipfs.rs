@@ -10,8 +10,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-pub use ipfs_api_backend_hyper::IpfsApi;
 pub use ipfs_api_backend_hyper::request::Add as AddRequest;
+pub use ipfs_api_backend_hyper::IpfsApi;
 
 /// A wrapper around a gateway url
 pub struct IpfsGateway(Url);

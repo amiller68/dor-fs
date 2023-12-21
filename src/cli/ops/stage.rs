@@ -7,14 +7,16 @@ use super::change_log::ChangeType;
 use super::utils::{load_change_log, load_dor_store, save_change_log, save_dor_store};
 
 use crate::cli::config::{Config, ConfigError};
-use crate::ipfs::{IpfsApi, IpfsClient, add_file_request, IpfsError, IpfsClientError};
+use crate::ipfs::{add_file_request, IpfsApi, IpfsClient, IpfsClientError, IpfsError};
 use crate::types::Object;
 
 /// Add a file to the local ipfs node using its path
 async fn add_file(path: &PathBuf) -> Result<Cid, StageError> {
     let local_ipfs_client = IpfsClient::default();
     let file = File::open(path)?;
-    let add_response = local_ipfs_client.add_with_options(file, add_file_request()).await?;
+    let add_response = local_ipfs_client
+        .add_with_options(file, add_file_request())
+        .await?;
     let cid = Cid::try_from(add_response.hash)?;
     Ok(cid)
 }
@@ -38,7 +40,9 @@ pub async fn stage(_config: &Config, working_dir: PathBuf) -> Result<(), StageEr
             // Add the file to the local ipfs node
             let added_cid = add_file(&working_path).await?;
             // Make sure the cid matches the one in the change_log
-            if added_cid != *cid { return Err(StageError::CidMismatch(added_cid, cid.clone())); }
+            if added_cid != *cid {
+                return Err(StageError::CidMismatch(added_cid, cid.clone()));
+            }
             // Insert the file into the DorStore
             if diff_type == &ChangeType::Added {
                 let object = Object::new(added_cid.clone());

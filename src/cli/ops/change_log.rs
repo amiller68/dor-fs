@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
 use cid::Cid;
+use serde::{Deserialize, Serialize};
 
 // TODO: this type isn't quite right
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]

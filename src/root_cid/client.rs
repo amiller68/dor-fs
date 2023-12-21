@@ -171,16 +171,36 @@ impl From<CidWrapper> for Cid {
 impl Tokenizable for CidWrapper {
     fn from_token(token: ethers::abi::Token) -> Result<Self, InvalidOutputType> {
         let bytes = token
-            .into_bytes()
+            .into_fixed_bytes()
             .ok_or(InvalidOutputType("Invalid Bytes".to_string()))?;
         let cid = Cid::try_from(bytes).map_err(|_| InvalidOutputType("Invalid CID".to_string()))?;
         Ok(Self(cid))
     }
 
     fn into_token(self) -> ethers::abi::Token {
-        let bytes = self.0.to_bytes();
-        ethers::abi::Token::Bytes(bytes)
+        let buff = [0u8; 64];
+        let bytes = self
+            .0
+            .to_bytes()
+            .iter()
+            .chain(buff.iter())
+            .take(64)
+            .copied()
+            .collect::<Vec<u8>>();
+        ethers::abi::Token::FixedBytes(bytes)
     }
 }
 
-// TODO: client unit tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cid_wrapper_rt() {
+        let cid = Cid::default();
+        let cid_wrapper = CidWrapper(cid);
+        let token = cid_wrapper.into_token();
+        let from_cid = CidWrapper::from_token(token).unwrap();
+        assert_eq!(cid, from_cid.into());
+    }
+}

@@ -4,7 +4,8 @@ use std::path::PathBuf;
 pub use super::args::{Args, Command, Parser};
 use super::config::{handle_config_subcommand, Config, ConfigError};
 use super::ops::{
-    diff, health, push, stage, stat, pull, DiffError, HealthError, PushError, StageError, StatError, PullError
+    diff, health, pull, push, stage, stat, DiffError, HealthError, PullError, PushError,
+    StageError, StatError,
 };
 
 pub struct App;

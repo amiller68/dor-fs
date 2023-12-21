@@ -12,8 +12,7 @@ pub fn health(_config: &Config, working_dir: PathBuf) -> Result<(), HealthError>
         Some(eth_remote) => eth_remote,
         None => {
             tracing::info!("eth_remote not configured");
-            return Ok(())
-            
+            return Ok(());
         }
     };
 
@@ -21,7 +20,7 @@ pub fn health(_config: &Config, working_dir: PathBuf) -> Result<(), HealthError>
         Some(ipfs_remote) => ipfs_remote,
         None => {
             tracing::info!("ipfs_remote not configured");
-            return Ok(())
+            return Ok(());
         }
     };
 

@@ -1,11 +1,11 @@
 use std::io::Write;
 use std::path::PathBuf;
 
-use fs_tree::FsTree;
 use cid::Cid;
+use fs_tree::FsTree;
 
-use crate::ipfs::{IpfsApi, IpfsClient, hash_file_request, IpfsClientError};
 use crate::cli::config::{Config, ConfigError, DEFAULT_LOCAL_DOT_CHANGELOG};
+use crate::ipfs::{hash_file_request, IpfsApi, IpfsClient, IpfsClientError};
 
 use super::change_log::{ChangeLog, ChangeType};
 use super::utils::{dot_dir, working_dot_dir};
@@ -38,10 +38,7 @@ pub async fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffErro
 
     // Insert the root directory hash into the change_log for comparison
     // This should always just get matched out and removed
-    base.insert(
-        PathBuf::from(""),
-        (Cid::default(), ChangeType::Base),
-    );
+    base.insert(PathBuf::from(""), (Cid::default(), ChangeType::Base));
 
     // Read the working directory structure into a fs-tree
     let next = next_fs_tree(working_dir.clone())?;
@@ -68,8 +65,10 @@ pub async fn diff(_config: &Config, working_dir: PathBuf) -> Result<(), DiffErro
                                 update.remove(base_path);
                             }
                             _ => {
-                                update
-                                    .insert(base_path.clone(), (Cid::default(), ChangeType::Removed));
+                                update.insert(
+                                    base_path.clone(),
+                                    (Cid::default(), ChangeType::Removed),
+                                );
                             }
                         }
                     }

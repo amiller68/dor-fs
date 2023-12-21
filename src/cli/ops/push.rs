@@ -1,13 +1,13 @@
+use std::fs::File;
+use std::io::Cursor;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::io::Cursor;
-use std::fs::File;
 
+use super::utils::{load_dor_store, load_root_cid, save_dor_store, save_root_cid, working_dot_dir};
 use cid::Cid;
-use super::utils::{load_root_cid, save_root_cid, load_dor_store, save_dor_store, working_dot_dir};
 
 use crate::cli::config::{Config, ConfigError};
-use crate::ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsError, add_file_request};
+use crate::ipfs::{add_file_request, IpfsApi, IpfsClient, IpfsClientError, IpfsError};
 
 pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError> {
     let remote_ipfs_client = match config.ipfs_remote() {
@@ -32,13 +32,15 @@ pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError
         }
     }
 
-    // Now 
+    // Now
     dor_store.set_previous_root(Cid::default());
     let dor_store_vec = serde_json::to_vec(&dor_store)?;
     let dor_store_data = Cursor::new(dor_store_vec);
-    let add_response = remote_ipfs_client.add_with_options(dor_store_data, add_file_request()).await?;
+    let add_response = remote_ipfs_client
+        .add_with_options(dor_store_data, add_file_request())
+        .await?;
     let new_root_cid = Cid::from_str(&add_response.hash)?;
-    
+
     // TODO: save to eth for later pulling
     save_root_cid(working_dir.clone(), &new_root_cid)?;
     save_dor_store(working_dir.clone(), &dor_store)?;
@@ -48,7 +50,9 @@ pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError
 /// Add a file to the local ipfs node using its path
 async fn add_file(path: &PathBuf, remote_ipfs_client: &IpfsClient) -> Result<Cid, PushError> {
     let file = File::open(path)?;
-    let add_response = remote_ipfs_client.add_with_options(file, add_file_request()).await?;
+    let add_response = remote_ipfs_client
+        .add_with_options(file, add_file_request())
+        .await?;
     let cid = Cid::try_from(add_response.hash)?;
     Ok(cid)
 }

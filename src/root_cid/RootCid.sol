@@ -8,17 +8,18 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 /// @notice This contract is a simple pointer to a metadata file on IPFS
 
 contract RootCid is AccessControl {
-  bytes32 public cid;
+  // We're opting for 512 bit Cids, so we'll need two bytes32
+  bytes32[2] public cid;
   bytes32 public constant WRITER_ROLE = keccak256("WRITER_ROLE");
 
-  constructor(bytes32 _cid) {
+  constructor(bytes32[2] memory _cid) {
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(WRITER_ROLE, msg.sender);
     cid = _cid;
   }
   
   
-  event updated(bytes32 cid);
+  event updated(bytes32[2] cid);
 
   /* Permissions */
 
@@ -29,14 +30,15 @@ contract RootCid is AccessControl {
 
   /* CRUD ops */
 
-  function read() public view returns (bytes32) {
+  function read() public view returns (bytes32[2] memory) {
     return cid;
   }
 
   // Set the CID of the blog - restricted to owner
-  function update(bytes32 previous_cid, bytes32 _cid) public {
+  function update(bytes32[2] memory previous_cid, bytes32[2] memory _cid) public {
     require(hasRole(WRITER_ROLE, msg.sender));
-    require(previous_cid == cid);
+    require(previous_cid[0] == cid[0]);
+    require(previous_cid[1] == cid[1]);
     cid = _cid;
     emit updated(cid);
   }

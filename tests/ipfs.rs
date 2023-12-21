@@ -1,4 +1,4 @@
-use dor_store::prelude::{IpfsClient, IpfsError, IpfsApi};
+use dor_store::prelude::{IpfsApi, IpfsClient, IpfsError};
 
 use futures_util::TryStreamExt;
 use serde_json::json;

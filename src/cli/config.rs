@@ -1,10 +1,10 @@
+use std::collections::HashMap;
 use std::{
     env,
     fs::{create_dir_all, File},
     io::Write,
     path::PathBuf,
 };
-use std::collections::HashMap;
 
 use cid::Cid;
 use ethers::signers::Wallet;
@@ -27,7 +27,10 @@ pub const DEFAULT_LOCAL_DOT_CHANGELOG: &str = "change_log.json";
 pub const DEFAULT_LOCAL_DOT_DORFS: &str = "dorfs.json";
 pub const DEFAULT_LOCAL_DOT_ROOTCID: &str = "root_cid";
 
-pub fn handle_config_subcommand(_config: &Config, subcommand: ConfigureSubcommand) -> Result<(), ConfigError> {
+pub fn handle_config_subcommand(
+    _config: &Config,
+    subcommand: ConfigureSubcommand,
+) -> Result<(), ConfigError> {
     match subcommand {
         ConfigureSubcommand::Create { subcommand } => match subcommand {
             ConfigureCreateSubcommand::Eth {
@@ -315,10 +318,7 @@ impl OnDiskConfig {
         let xdg_path = xdg_config_home()?;
         let eth_remote_dir_path = xdg_path.join(DEAULT_ETH_REMOTE_CONFIG_DIR);
         let eth_remote_config_path = match self.eth_remote_alias.clone() {
-            Some(eth_remote_alias) => {
-                
-                eth_remote_dir_path.join(eth_remote_alias)
-            }
+            Some(eth_remote_alias) => eth_remote_dir_path.join(eth_remote_alias),
             None => {
                 return Err(ConfigError::MissingEthRemoteAlias);
             }
@@ -372,10 +372,7 @@ impl OnDiskConfig {
         let xdg_path = xdg_config_home()?;
         let ipfs_remote_dir_path = xdg_path.join(DEFAULT_IPFS_REMOTE_CONFIG_DIR);
         let ipfs_remote_config_path = match self.ipfs_remote_alias.clone() {
-            Some(ipfs_remote_alias) => {
-                
-                ipfs_remote_dir_path.join(ipfs_remote_alias)
-            }
+            Some(ipfs_remote_alias) => ipfs_remote_dir_path.join(ipfs_remote_alias),
             None => {
                 return Err(ConfigError::MissingIpfsRemoteAlias);
             }
