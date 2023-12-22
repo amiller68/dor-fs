@@ -1,21 +1,19 @@
 use std::sync::Arc;
 
-use cid::Cid;
 use ethers::{
     abi::Abi,
-    abi::{InvalidOutputType, Tokenizable},
     contract::Contract,
     prelude::*,
     providers::{Http, Provider},
     signers::LocalWallet,
-    types::{Address, TransactionRequest},
+    types::Address,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthRemote {
-    pub rpc_url: String,
+    pub rpc_url: Url,
     pub chain_id: u16,
 }
 
@@ -31,7 +29,7 @@ impl TryFrom<EthRemote> for EthClient {
     type Error = EthClientError;
 
     fn try_from(remote: EthRemote) -> Result<Self, Self::Error> {
-        let provider = Provider::<Http>::try_from(remote.rpc)
+        let provider = Provider::<Http>::try_from(remote.rpc_url.to_string())
             .map_err(|e| EthClientError::Default(e.to_string()))?;
         Ok(Self {
             provider,
@@ -61,7 +59,7 @@ impl EthClient {
     /// Attach SignerMiddleware to the client
     pub fn with_signer(&mut self, wallet: LocalWallet) -> Result<&Self, EthClientError> {
         let wallet = wallet.with_chain_id(self.chain_id);
-        let signer = SignerMiddleware::new(self.client.clone(), wallet);
+        let signer = SignerMiddleware::new(self.provider.clone(), wallet);
         self.signer = Some(signer);
         Ok(self)
     }

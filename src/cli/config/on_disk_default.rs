@@ -1,7 +1,6 @@
 use std::{
     fs::{create_dir_all, File},
     io::Write,
-    path::PathBuf,
 };
 
 use serde::{Deserialize, Serialize};
@@ -27,7 +26,7 @@ impl OnDiskDefault {
             create_dir_all(&xdg_path)?;
             let config = Self::default();
             config.save()?;
-            Ok(config)
+            return Ok(config);
         }
 
         // Otherwise load the config
@@ -41,8 +40,9 @@ impl OnDiskDefault {
     /// Update what default device to use
     /// Saves the updated config to disk
     pub fn set_device_alias(&mut self, alias: String) -> Result<(), ConfigError> {
-        self.device_alias = Some(String);
-        self.save()?
+        self.device_alias = Some(alias);
+        self.save()?;
+        Ok(())
     }
 
     /// Read the set alias, if any
@@ -57,6 +57,7 @@ impl OnDiskDefault {
 
         let config_json = serde_json::to_string(&self)?;
         let mut config_file = File::create(config_path)?;
-        config_file.write_all(config_json.as_bytes())
+        config_file.write_all(config_json.as_bytes())?;
+        Ok(())
     }
 }

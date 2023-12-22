@@ -5,13 +5,13 @@ use std::path::PathBuf;
 use cid::Cid;
 use serde::{Deserialize, Serialize};
 
-// TODO: this type isn't quite right
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum ChangeType {
     Base,
     Added,
     Modified,
     Removed,
+    Staged
 }
 
 impl std::fmt::Display for ChangeType {
@@ -21,6 +21,7 @@ impl std::fmt::Display for ChangeType {
             Self::Added => "\x1b[0;32mAdded\x1b[0m",
             Self::Modified => "\x1b[0;33mModified\x1b[0m",
             Self::Removed => "\x1b[0;31mRemoved\x1b[0m",
+            Self::Staged => "\x1b[0;34mStaged\x1b[0m",
         };
         write!(f, "{}", s)
     }

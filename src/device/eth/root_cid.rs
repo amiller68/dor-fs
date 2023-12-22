@@ -35,10 +35,8 @@ pub enum RootCidError {
     Default(String),
 }
 
-// TODO: I feel like this might be better as a trait over generic Eth Clients, but thats a later
-// thing
-// TODO: restrict visbility when api usage is clearer
-pub struct RootCid(EthClient)
+#[derive(Debug, Clone)]
+pub struct RootCid(EthClient);
 
 impl RootCid {    
     /// Create a new RootCid instance from an EthClient and Contract Address 
@@ -60,7 +58,7 @@ impl RootCid {
         let signer = match self.0.signer() {
             Some(signer) => signer,
             None => Err(RootCidError::MissingSigner),
-        }
+        };
         
         let data = self
             .contract
@@ -111,7 +109,7 @@ impl RootCid {
         let signer = match self.0.signer() {
             Some(signer) => signer,
             None => Err(RootCidError::MissingSigner),
-        }
+        };
         let data = contract
             .encode("update", (CidToken(previous_cid), CidToken(cid)))
             .map_err(|e| RootCidError::Default(e.to_string()))?;

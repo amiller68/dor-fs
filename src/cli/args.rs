@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
 use clap::{command, Subcommand};
+use ethers::types::Address;
+use url::Url;
 
 pub use clap::Parser;
 
@@ -13,7 +15,7 @@ pub struct Args {
 
     /// Working dir to run a command on
     #[clap(short, long)]
-    pub dir: Option<PathBuf>,
+    pub dir: Option<String>,
     /// Private Secp256k1 Admin Key (should be contract deployer)
     #[clap(long)]
     pub admin_key: Option<String>,
@@ -50,30 +52,30 @@ pub enum DeviceSubcommand {
         #[clap(long, short)]
         alias: String,
         #[clap(long)]
-        eth_rpc: String,
+        eth_rpc: Url,
         #[clap(long)]
         eth_chain_id: u16,
         #[clap(long)]
-        contract_address: String,
+        contract_address: Address,
         #[clap(long, short)]
-        ipfs_url: String,
+        ipfs_url: Url,
         #[clap(long)]
-        ipfs_gateway_url: String,
+        ipfs_gateway_url: Url,
     },
     /// Update a Device
     Update {
         #[clap(long, short)]
         alias: String,
         #[clap(long)]
-        eth_rpc: Option<String>,
+        eth_rpc: Option<Url>,
         #[clap(long)]
         eth_chain_id: Option<u16>,
         #[clap(long)]
-        contract_address: Option<String>,
+        contract_address: Option<Address>,
         #[clap(long, short)]
-        ipfs_url: Option<String>,
+        ipfs_url: Option<Url>,
         #[clap(long)]
-        ipfs_gateway_url: Option<String>,
+        ipfs_gateway_url: Option<Url>,
     },
     /// Set a configuration value
     Set { alias: String },

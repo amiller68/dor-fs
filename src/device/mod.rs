@@ -1,26 +1,39 @@
-use ethers::types::LocalWallet;
+use ethers::signers::LocalWallet;
 
 // TODO: make these mod
 pub mod eth;
 pub mod ipfs;
 
 use eth::{EthClient, EthClientError};
-use ipfs::{IpfsClient, IpfsClientError};
-
-use crate::cli::{Config, ConfigError};
-use crate::types::DorStore;
+use ipfs::{IpfsClient, IpfsClientError, IpfsGateway};
 
 /// Device:
 /// Responsible for configuring a connection against
 /// a remote (ipfs + eth)
 pub struct Device {
-    ipfs: IpfsClient,
-    ipfs_gateway: IpfsGateway,
-    eth: EthClient,
-    wallet: LocalWallet,
+    pub ipfs: IpfsClient,
+    pub ipfs_gateway: IpfsGateway,
+    pub eth: EthClient,
+    pub wallet: LocalWallet,
 }
 
-#[derive(Debug, this_error::Error)]
+impl Device {
+    pub fn new(
+        ipfs: IpfsClient,
+        ipfs_gateway: IpfsGateway,
+        eth: EthClient,
+        wallet: LocalWallet,
+    ) -> Self {
+        Self {
+            ipfs,
+            ipfs_gateway,
+            eth,
+            wallet,
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum DeviceError {
     #[error("ipfs error: {0}")]
     IpfsClient(#[from] IpfsClientError),
