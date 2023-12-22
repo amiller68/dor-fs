@@ -57,7 +57,7 @@ pub async fn diff(config: &Config) -> Result<Log, DiffError> {
                     let working_next_path = working_dir.clone().join(next_path.clone());
                     if !working_next_path.is_dir() {
                         let hash = device.hash(&working_next_path).await?;
-                        update.insert(next_path.clone(), (hash.clone(), ChangeType::Added));
+                        update.insert(next_path.clone(), (hash, ChangeType::Added));
                     }
                     next_next = next_iter.next();
                     continue;
@@ -75,15 +75,13 @@ pub async fn diff(config: &Config) -> Result<Log, DiffError> {
                         if base_hash != &next_hash {
                             match base_type {
                                 ChangeType::Added => {
-                                    update.insert(
-                                        base_path.clone(),
-                                        (next_hash.clone(), ChangeType::Added),
-                                    );
+                                    update
+                                        .insert(base_path.clone(), (next_hash, ChangeType::Added));
                                 }
                                 _ => {
                                     update.insert(
                                         base_path.clone(),
-                                        (next_hash.clone(), ChangeType::Modified),
+                                        (next_hash, ChangeType::Modified),
                                     );
                                 }
                             }
@@ -101,7 +99,7 @@ pub async fn diff(config: &Config) -> Result<Log, DiffError> {
                 let working_next_path = working_dir.clone().join(next_path.clone());
                 if !working_next_path.is_dir() {
                     let hash = device.hash(&working_next_path).await?;
-                    update.insert(next_path.clone(), (hash.clone(), ChangeType::Added));
+                    update.insert(next_path.clone(), (hash, ChangeType::Added));
                 }
                 next_next = next_iter.next();
                 continue;

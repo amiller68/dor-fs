@@ -21,27 +21,27 @@ impl ChangeLog {
     pub fn new(manager_alias: String, dor_store: &DorStore, root_cid: &Cid) -> Self {
         let mut log = Log::new();
         for (path, object) in dor_store.objects().iter() {
-            log.insert(path.clone(), (object.cid().clone(), ChangeType::Base));
+            log.insert(path.clone(), (*object.cid(), ChangeType::Base));
         }
         Self {
             manager_alias,
             log,
-            versions: vec![(root_cid.clone(), dor_store.clone())],
+            versions: vec![(*root_cid, dor_store.clone())],
         }
     }
 
     pub fn wipe(&mut self, dor_store: &DorStore, root_cid: &Cid) {
         let mut log = Log::new();
         for (path, object) in dor_store.objects().iter() {
-            log.insert(path.clone(), (object.cid().clone(), ChangeType::Base));
+            log.insert(path.clone(), (*object.cid(), ChangeType::Base));
         }
         self.log = log;
-        self.versions = vec![(root_cid.clone(), dor_store.clone())];
+        self.versions = vec![(*root_cid, dor_store.clone())];
     }
 
     pub fn update(&mut self, log: &Log, dor_store: &DorStore, root_cid: &Cid) {
         self.log = log.clone();
-        self.versions.push((root_cid.clone(), dor_store.clone()));
+        self.versions.push((*root_cid, dor_store.clone()));
     }
 
     pub fn manager_alias(&self) -> &String {

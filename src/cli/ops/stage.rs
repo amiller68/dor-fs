@@ -31,15 +31,15 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
             let added_cid = device.stage(&working_path).await?;
             // Make sure the cid matches the one in the change_log
             if added_cid != *cid {
-                return Err(StageError::CidMismatch(added_cid, cid.clone()));
+                return Err(StageError::CidMismatch(added_cid, *cid));
             }
             // Insert the file into the DorStore
             if diff_type == &ChangeType::Added {
-                let object = Object::new(added_cid.clone());
+                let object = Object::new(added_cid);
                 update_dor_store.insert_object(path.clone(), object.clone());
             } else if diff_type == &ChangeType::Modified {
                 let mut d = update_dor_store.clone();
-                let object = d.update_object(path, added_cid.clone(), None);
+                let object = d.update_object(path, added_cid, None);
                 update_dor_store.insert_object(path.clone(), object.clone());
             }
         }

@@ -3,9 +3,8 @@ use std::fmt::{self, Display};
 pub use super::args::{Args, Command, Parser};
 use super::config::{Config, ConfigError};
 use super::ops::{
-    push,
-    device_subcommand, health, init, pull, stage, DeviceSubcommandError, HealthError, InitError,
-    PullError, StageError, PushError,
+    device_subcommand, health, init, pull, push, stage, DeviceSubcommandError, HealthError,
+    InitError, PullError, PushError, StageError,
 };
 
 pub struct App;

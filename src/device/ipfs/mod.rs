@@ -106,6 +106,9 @@ impl Deref for IpfsClient {
     }
 }
 
+// TODO: fix this -- wanna get rid of warnings
+
+#[allow(clippy::field_reassign_with_default)]
 pub fn hash_file_request() -> AddRequest<'static> {
     let mut add = AddRequest::default();
     add.pin = Some(false);
@@ -115,6 +118,7 @@ pub fn hash_file_request() -> AddRequest<'static> {
     add
 }
 
+#[allow(clippy::field_reassign_with_default)]
 pub fn add_file_request() -> AddRequest<'static> {
     let mut add = AddRequest::default();
     add.pin = Some(true);

@@ -19,6 +19,9 @@ pub struct Args {
     pub admin_key: Option<String>,
 }
 
+// TODO: balance this
+
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Subcommand, Clone, PartialEq)]
 pub enum Command {
     /// Manages Devices

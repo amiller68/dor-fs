@@ -39,9 +39,7 @@ pub async fn pull(config: &Config) -> Result<(), PullError> {
         }
 
         // TODO: this should use the gateway
-        device
-            .pull(object.cid(), &working_path)
-            .await?;
+        device.pull(object.cid(), &working_path).await?;
     }
 
     let change_log = ChangeLog::new(alias, &dor_store, &root_cid);

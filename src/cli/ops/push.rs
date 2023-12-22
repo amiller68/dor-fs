@@ -1,8 +1,8 @@
 use cid::Cid;
 
-use crate::types::DorStore;
-use crate::device::DeviceError;
 use crate::cli::config::{Config, ConfigError};
+use crate::device::DeviceError;
+use crate::types::DorStore;
 
 pub async fn push(config: &Config) -> Result<(), PushError> {
     let working_dir = config.working_dir().clone();
@@ -16,7 +16,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
 
     // Check our root matches our on-disk root
     if root_cid != &disk_root_cid {
-        return Err(PushError::MissmatchedRootCid(root_cid.clone(), disk_root_cid));
+        return Err(PushError::MissmatchedRootCid(*root_cid, disk_root_cid));
     }
 
     // Check our base matches our on-disk base
@@ -33,7 +33,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
     if base == next_base {
         return Err(PushError::NoChanges);
     }
-    
+
     let objects = next_base.objects();
 
     // Tell the remote to pin all the objects
@@ -41,22 +41,22 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
         if device.remote_stat(object.cid()).await?.is_some() {
             continue;
         }
-        let cid = device.push(&working_dir.join(path)).await?; 
+        let cid = device.push(&working_dir.join(path)).await?;
         if cid != *object.cid() {
-            return Err(PushError::CidMismatch(cid, object.cid().clone()));
+            return Err(PushError::CidMismatch(cid, *object.cid()));
         }
     }
 
-    let new_root_cid = device.push_dor_store(&next_base).await?;
+    let new_root_cid = device.push_dor_store(next_base).await?;
 
     // Push the new root cid to the eth client
-    device.update_root_cid(root_cid.clone(), new_root_cid.clone()).await?;
+    device.update_root_cid(*root_cid, new_root_cid).await?;
     let mut change_log = change_log.clone();
-    change_log.wipe(&next_base, &new_root_cid);
+    change_log.wipe(next_base, &new_root_cid);
     config.set_root_cid(&new_root_cid)?;
-    config.set_base(&next_base)?;
+    config.set_base(next_base)?;
     config.set_change_log(change_log)?;
-    
+
     Ok(())
 }
 

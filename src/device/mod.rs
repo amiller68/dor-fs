@@ -201,7 +201,7 @@ impl Device {
     // }
 
     /// Return the block data from the remote as a Vec<u8>
-    pub async fn pull_block(self: &Self, cid: &Cid) -> Result<Vec<u8>, DeviceError> {
+    pub async fn pull_block(&self, cid: &Cid) -> Result<Vec<u8>, DeviceError> {
         let block_stream = self.ipfs.block_get(&cid.to_string());
         let block_data = block_stream
             .map_ok(|chunk| chunk.to_vec())
