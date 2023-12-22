@@ -1,6 +1,6 @@
 use cid::Cid;
 use ethers::abi::{InvalidOutputType, Tokenizable};
-use serde::{Deserialize, Serialize};
+
 
 // TODO: I should just write a boilerplate wrapper class for Cids for doing just this
 // i have to do stuff like this often enough
@@ -31,7 +31,7 @@ impl Tokenizable for CidToken {
             return Err(InvalidOutputType("Invalid Array -- wrong len".to_string()));
         }
 
-        let bytes_1 = match array.get(0) {
+        let bytes_1 = match array.first() {
             Some(ethers::abi::Token::FixedBytes(bytes)) => bytes,
             _ => return Err(InvalidOutputType("Invalid Bytes -- ind 0".to_string())),
         };

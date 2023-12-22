@@ -5,49 +5,50 @@ use crate::types::DorStore;
 
 mod log;
 
-pub use log::{DisplayableLog, Log};
+pub use log::{DisplayableLog, Log, ChangeType};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct ChangeLog {
+    /// Alias of the managing device
+    manager_alias: String,
+    /// The log of changes
     log: Log,
-    root_cid: Cid,
+    /// The versions of the DorFS currently staged
     versions: Vec<(Cid, DorStore)>,
 }
 
 impl ChangeLog {
-    pub fn new() -> Self {
-        Self {
-            log: Log::new(),
-            root_cid: Cid::default(),
-            versions: Vec::new(),
+    pub fn new(manager_alias: String, dor_store: &DorStore, root_cid: &Cid) -> Self {
+        let mut log = Log::new();
+        for (path, object) in dor_store.objects().iter() {
+            log.insert(path.clone(), (object.cid().clone(), ChangeType::Base));
         }
+        Self {
+            manager_alias,
+            log,
+            versions: vec![(root_cid.clone(), dor_store.clone())],
+        }
+    }
+
+    pub fn update(&mut self, log: &Log, dor_store: &DorStore, root_cid: &Cid) {
+        self.log = log.clone();
+        self.versions.push((root_cid.clone(), dor_store.clone()));
+    }
+
+    pub fn manager_alias(&self) -> &String {
+        &self.manager_alias
     }
 
     pub fn log(&self) -> &Log {
         &self.log
     }
 
-    pub fn log_mut(&mut self) -> &mut Log {
-        &mut self.log
-    }
-
     pub fn displayable(&self) -> DisplayableLog {
         DisplayableLog(self.log.clone())
     }
 
-    pub fn root_cid(&self) -> &Cid {
-        &self.root_cid
-    }
 
-    pub fn versions(&self) -> &Vec<(Cid, DorStore)> {
-        &self.versions
-    }
-
-    pub fn add_version(&mut self, cid: Cid, store: DorStore) {
-        self.versions.push((cid, store));
-    }
-
-    pub fn set_root_cid(&mut self, cid: Cid) {
-        self.root_cid = cid;
+    pub fn last_version(&self) -> Option<&(Cid, DorStore)> {
+        self.versions.last()
     }
 }

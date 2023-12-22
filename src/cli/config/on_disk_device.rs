@@ -26,7 +26,7 @@ use super::{
 /// An OnDiskDevice Configuration
 /// Specifies both connection to remote, and api for managing device state via an alias
 pub struct OnDiskDevice {
-    pub alias: String,
+    alias: String,
 
     // Remote configuration
     
@@ -71,8 +71,8 @@ impl OnDiskDevice {
         let cid = Cid::default();
         let base = DorStore::default();
 
-        Self::set_root_cid(alias.clone(), cid)?;
-        Self::set_base(alias.clone(), base)?;
+        Self::set_root_cid(alias.clone(), &cid)?;
+        Self::set_base(alias.clone(), &base)?;
 
         config.save(alias.clone())?;
 
@@ -89,6 +89,11 @@ impl OnDiskDevice {
         let config = std::fs::read_to_string(config_path)?;
         let config: Self = serde_json::from_str(&config)?;
         Ok(config)
+    }
+
+    /// alias
+    pub fn alias(&self) -> String {
+        self.alias.clone()
     }
 
     /// Return a list of all on disk devices
@@ -149,7 +154,7 @@ impl OnDiskDevice {
     }
 
     /// Set the root cid on disk for the device
-    pub fn set_root_cid(alias: String, cid: Cid) -> Result<(), ConfigError> {
+    pub fn set_root_cid(alias: String, cid: &Cid) -> Result<(), ConfigError> {
         let device_path = device_path(alias.clone())?;
         let root_cid_path = device_path.join(ROOT_CID_NAME);
         let root_cid_str = cid.to_string();
@@ -168,7 +173,7 @@ impl OnDiskDevice {
     }
 
     /// Set the base dor store metadata for the device
-    pub fn set_base(alias: String, base: DorStore) -> Result<(), ConfigError> {
+    pub fn set_base(alias: String, base: &DorStore) -> Result<(), ConfigError> {
         let device_path = device_path(alias.clone())?;
         let base_path = device_path.join(BASE_DOR_STORE_NAME);
         let base_str = serde_json::to_string(&base)?;

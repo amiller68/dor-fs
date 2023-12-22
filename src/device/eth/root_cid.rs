@@ -49,7 +49,7 @@ impl RootCid {
     /// Grant the given address the ability to update the contract cid
     pub async fn grant_writer(
         &self,
-        grantee_address: Address,
+        _grantee_address: Address,
     ) -> Result<Option<TransactionReceipt>, RootCidError> {
         // TODO: This is janky, but we should have the contract available by now
         let contract = self.0.contract().unwrap();

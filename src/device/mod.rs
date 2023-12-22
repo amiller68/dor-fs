@@ -1,6 +1,8 @@
 use std::path::PathBuf;
+use std::io::Write;
 
 use cid::Cid;
+use futures_util::stream::TryStreamExt;
 use ethers::types::Address;
 use ethers::signers::LocalWallet;
 
@@ -10,8 +12,10 @@ use ethers::signers::LocalWallet;
 pub mod eth;
 pub mod ipfs;
 
-use eth::{EthClient, EthClientError, RootCid, RootCidError};
+use eth::{EthClient, EthClientError, RootCid};
 use ipfs::{IpfsClient, IpfsClientError, IpfsGateway, IpfsError, IpfsApi};
+
+use crate::types::DorStore;
 
 /// Device:
 /// Responsible for configuring a connection against
@@ -32,7 +36,47 @@ impl Device {
         self
     }
 
+    /* Store Helpers */
+
+    pub async fn pull_dor_store(
+        &self,
+        root_cid: &Cid
+    ) -> Result<DorStore, DeviceError> {
+        let dor_store_data = self.pull_block(root_cid).await?;
+        let dor_store = serde_json::from_slice(&dor_store_data)?;
+        Ok(dor_store)
+    }
+
+    pub async fn hash_dor_store(
+        &self,
+        dor_store: &DorStore
+    ) -> Result<Cid, DeviceError> {
+        let dor_store_data = serde_json::to_vec(&dor_store)?;
+        let dor_store_data = std::io::Cursor::new(dor_store_data);
+        let cid = self.ipfs.add_with_options(dor_store_data, ipfs::add_file_request()).await?;
+        let cid = Cid::try_from(cid.hash)?;
+        Ok(cid)
+    }
+
+    pub async fn file_needs_pull(
+        &self,
+        path: &PathBuf,
+        cid: &Cid
+    ) -> Result<bool, DeviceError> {
+        let hash = self.hash(path).await?;
+        if hash == *cid {
+            Ok(false)
+        } else {
+            Ok(true)
+        }
+    }
+
     /* Root Pointer */
+
+    /// Get the chain id from the remote eth node
+    pub fn chain_id(&self) -> u16 {
+        self.eth.chain_id()
+    }
 
     /// Get the root cid from the remote eth node
     pub async fn get_root_cid(&self) -> Result<Cid, DeviceError> {
@@ -65,6 +109,8 @@ impl Device {
 
         Ok(next_root_cid) 
     }
+
+
     
     /* Ipfs */
 
@@ -82,7 +128,7 @@ impl Device {
     }
 
     /// Hash a file against the local ipfs node
-    pub async fn hash(&self, file_path: PathBuf) -> Result<Cid, DeviceError> {
+    pub async fn hash(&self, file_path: &PathBuf) -> Result<Cid, DeviceError> {
         let file = std::fs::File::open(file_path)?;
         let local = IpfsClient::default();
         let add_response = local.add_with_options(file, ipfs::hash_file_request()).await?;
@@ -117,11 +163,32 @@ impl Device {
     }
 
     /// Push a file to the remote ipfs node
-    pub async fn push(&self, file_path: PathBuf) -> Result<Cid, DeviceError> {
+    pub async fn push(&self, file_path: &PathBuf) -> Result<Cid, DeviceError> {
         let file = std::fs::File::open(file_path)?;
         let add_response = self.ipfs.add_with_options(file, ipfs::add_file_request()).await?;
         let cid = Cid::try_from(add_response.hash)?;
         Ok(cid)
+    }
+
+    /// Pull a file from the remote ipfs node
+    pub async fn download_cid(&self, cid: &Cid, path: &PathBuf) -> Result<(), DeviceError> {
+        let data = self.get(cid, None).await?;
+        let mut object_path = path.clone();
+        object_path.pop();
+        std::fs::create_dir_all(object_path)?;
+        let mut file = std::fs::File::create(path)?;
+        file.write_all(&data)?;
+        Ok(())
+    }
+
+    /// Return the block data from the remote as a Vec<u8>
+    pub async fn pull_block(self: &Self, cid: &Cid) -> Result<Vec<u8>, DeviceError> {
+        let block_stream = self.ipfs.block_get(&cid.to_string());
+        let block_data = block_stream
+            .map_ok(|chunk| chunk.to_vec())
+            .try_concat()
+            .await?;
+        Ok(block_data)
     }
 
     /// Get an ipfs path from the configured ipfs gateway
@@ -145,4 +212,6 @@ pub enum DeviceError {
     EthClient(#[from] EthClientError),
     #[error("root cid error: {0}")]
     RootCid(#[from] eth::RootCidError),
+    #[error("serde error: {0}")]
+    Serde(#[from] serde_json::Error),
 }

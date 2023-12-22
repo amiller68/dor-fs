@@ -4,11 +4,16 @@ use std::fmt::{self, Display};
 pub use super::args::{Args, Command, Parser};
 use super::config::{Config, ConfigError};
 use super::ops::{
-    
+    init,
     device_subcommand,
     health,
+    pull,
+    stage,
      DeviceSubcommandError,
     HealthError,
+    InitError,
+    PullError,
+    StageError,
 };
 
 pub struct App;
@@ -29,9 +34,16 @@ impl App {
             Command::Health => {
                 health(&config).await?;
             }
-            Command::Init => {}
-            Command::Pull => {}
-            Command::Stage => {}
+            Command::Init => {
+                init(&config)?;
+            }
+            Command::Pull => {
+                pull(&config).await?;
+            }
+            Command::Stage => {
+                stage(&config).await?;
+
+            }
             Command::Stat => {
                 let change_log = config.change_log()?;
                 let displayable_change_log = change_log.displayable();
@@ -47,12 +59,13 @@ impl App {
 pub enum AppError {
     Config(#[from] ConfigError),
     DeviceSubcommand(#[from] DeviceSubcommandError),
+    Init(#[from] InitError),
     Health(#[from] HealthError),
     // Stat(#[from] StatError),
     // Diff(#[from] DiffError),
-    // Stage(#[from] StageError),
+    Stage(#[from] StageError),
     // Push(#[from] PushError),
-    // Pull(#[from] PullError),
+    Pull(#[from] PullError),
 }
 
 fn capture_error<T>(result: Result<T, AppError>) {

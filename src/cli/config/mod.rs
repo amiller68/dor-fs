@@ -1,7 +1,8 @@
 use std::{env, io::Write, path::PathBuf};
-
+use std::fs::create_dir_all;
 
 use cid::Cid;
+use fs_tree::FsTree;
 use ethers::types::Address;
 use ethers::signers::LocalWallet;
 
@@ -79,6 +80,26 @@ impl Config {
         })
     }
 
+    pub fn working_dir(&self) -> &PathBuf {
+        &self.working_dir
+    }
+
+    /// Get the next fs-tree from the working directory           
+pub fn fs_tree(&self) -> Result<FsTree, ConfigError> {
+    let working_dir = self.working_dir();
+    let dot_dir = PathBuf::from(DEFAULT_LOCAL_DOT_DIR); 
+    // Read Fs-tree at dir or pwd, stripping off the local dot directory
+    let next = match fs_tree::FsTree::read_at(working_dir.to_str().unwrap())? {
+        fs_tree::FsTree::Directory(mut d) => {
+            let _res = &d.remove_entry(&dot_dir);
+            fs_tree::FsTree::Directory(d)
+        }
+        _ => {
+            return Err(ConfigError::DotDirNotADirectory);
+        }
+    };
+    Ok(next)
+}
     pub fn with_device_alias(&mut self, alias: String) -> &Self {
         self.device_alias = Some(alias);
         self
@@ -102,16 +123,43 @@ impl Config {
 
     /* Members */
 
+    pub fn init(&self) -> Result<(), ConfigError> {
+        let alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?; 
+        let dot_path = self.working_dir.join(DEFAULT_LOCAL_DOT_DIR);
+        
+        // Check if the dot path exists
+        if dot_path.exists() {
+            return Ok(());
+        }
+        create_dir_all(dot_path.clone())?;
+
+        let root_cid = self.root_cid()?;
+        let base = self.base()?;
+        
+        let change_log_path = dot_path.join(CHANGE_LOG_NAME);
+        let change_log = ChangeLog::new(alias, &base, &root_cid);
+        let change_log_str = serde_json::to_string_pretty(&change_log)?;
+        let mut change_log_file = std::fs::File::create(change_log_path)?;
+        change_log_file.write_all(change_log_str.as_bytes())?;
+        Ok(())
+    }
+
     pub fn change_log(&self) -> Result<ChangeLog, ConfigError> {
         let dot_path = self.working_dir.join(DEFAULT_LOCAL_DOT_DIR);
         let change_log_path = dot_path.join(CHANGE_LOG_NAME);
+
+        let alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
 
         if !change_log_path.exists() {
             return Err(ConfigError::ChangeLogNotFound);
         }
 
         let change_log_str = std::fs::read_to_string(change_log_path)?;
-        let change_log = serde_json::from_str(&change_log_str)?;
+        let change_log: ChangeLog = serde_json::from_str(&change_log_str)?;
+
+        if change_log.manager_alias() != &alias {
+            return Err(ConfigError::ChangeLogNotFound);
+        }
 
         Ok(change_log)
     }
@@ -133,7 +181,7 @@ impl Config {
         Ok(cid)
     }
 
-    pub fn set_root_cid(&self, cid: Cid) -> Result<(), ConfigError> {
+    pub fn set_root_cid(&self, cid: &Cid) -> Result<(), ConfigError> {
         let device_alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
         OnDiskDevice::set_root_cid(device_alias, cid)
     }
@@ -144,7 +192,7 @@ impl Config {
         Ok(base)
     }
 
-    pub fn set_base(&self, base: DorStore) -> Result<(), ConfigError> {
+    pub fn set_base(&self, base: &DorStore) -> Result<(), ConfigError> {
         let device_alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
         OnDiskDevice::set_base(device_alias, base)
     }
@@ -188,14 +236,19 @@ pub enum ConfigError {
     Parse(#[from] serde_json::Error),
     #[error("no set device")]
     NoSetDevice,
+    #[error("dot dir is not a directory")]
+    DotDirNotADirectory,
     #[error("device alias not found: {0}")]
     DeviceNotFound(String),
-    #[error("device exists: {0}")]
-    DeviceExists(String),
+    // #[error("device exists: {0}")]
+    // DeviceExists(String),
     #[error("change log not found")]
     ChangeLogNotFound,
     #[error("cid error: {0}")]
     Cid(#[from] cid::Error),
+    #[error("fs tree error: {0}")]
+    FsTree(#[from] fs_tree::Error),
+
 }
 
 /// Grab config path

@@ -9,24 +9,22 @@ pub async fn health(config: &Config) -> Result<(), HealthError> {
     let device = config.device()?;
     
     let alias = config.device_alias();
+
+    let chain_id = device.chain_id();
+
     let root_cid = match device.get_root_cid().await {
         Ok(root_cid) => Some(root_cid),
         Err(_) => None,
     };
     let eth_online = root_cid.is_some();
 
-    let local_ipfs_online = match device.local_id().await {
-        Ok(_) => true,
-        Err(_) => false,
-    };
+    let local_ipfs_online = device.local_id().await.is_ok();
 
-    let ipfs_online = match device.remote_id().await {
-        Ok(_) => true,
-        Err(_) => false,
-    };
+    let ipfs_online = device.remote_id().await.is_ok();
 
     let report = HealthReport {
         alias,
+        chain_id,
         root_cid,
         local_ipfs_online,
         ipfs_online,
@@ -39,6 +37,7 @@ pub async fn health(config: &Config) -> Result<(), HealthError> {
 
 struct HealthReport {
     alias: Option<String>,
+    chain_id: u16,
     root_cid: Option<Cid>,
     local_ipfs_online: bool,
     ipfs_online: bool,
@@ -51,6 +50,8 @@ impl Display for HealthReport {
             Some(alias) => alias,
             None =>  return write!(f, "no device configured"),
         };
+
+        let chain_id = self.chain_id;
 
         let root_cid = match &self.root_cid {
             Some(root_cid) => root_cid.to_string(),
@@ -74,16 +75,14 @@ impl Display for HealthReport {
 
         write!(
             f,
-            "alias: {}, root_cid: {}, local_ipfs: {}, ipfs: {}, eth: {}",
-            alias, root_cid, local_ipfs_online, ipfs_online, eth_online
+            "alias: {}, chain_id: {}, root_cid: {}, local_ipfs: {}, ipfs: {}, eth: {}",
+            alias, chain_id, root_cid, local_ipfs_online, ipfs_online, eth_online
         )
     }
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum HealthError {
-    #[error("critical failure")]
-    CriticalFailure,
     #[error("config error: {0}")]
     Config(#[from] ConfigError),
     #[error("io error: {0}")]
