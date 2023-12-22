@@ -1,4 +1,3 @@
-
 use crate::cli::args::DeviceSubcommand;
 use crate::cli::config::{Config, ConfigError};
 use crate::device::eth::EthRemote;
@@ -60,4 +59,3 @@ pub enum DeviceSubcommandError {
     #[error("config error: {0}")]
     Config(#[from] ConfigError),
 }
-

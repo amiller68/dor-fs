@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::fmt::Display;
+use std::sync::Arc;
 
 use ethers::{
     abi::Abi,
@@ -12,8 +12,8 @@ use ethers::{
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-mod root_cid;
 mod cid_token;
+mod root_cid;
 
 pub use root_cid::{RootCid, RootCidError};
 

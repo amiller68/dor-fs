@@ -1,13 +1,11 @@
-
 use cid::Cid;
 
 use super::diff::{diff, DiffError};
 
 use crate::cli::changes::ChangeType;
-use crate::device::DeviceError;
 use crate::cli::config::{Config, ConfigError};
+use crate::device::DeviceError;
 use crate::types::Object;
-
 
 pub async fn stage(config: &Config) -> Result<(), StageError> {
     let device = config.device()?;
@@ -15,7 +13,7 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
     let updates = diff(config).await?;
     let mut change_log = config.change_log()?;
     let base_dor_store = config.base()?;
-    let (_last_root_cid, last_dor_store) = change_log.last_version().unwrap().clone();
+    let (last_root_cid, last_dor_store) = change_log.last_version().unwrap().clone();
     let mut update_dor_store = base_dor_store.clone();
 
     let change_log_iter = updates.iter();
@@ -23,14 +21,14 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
     for (path, (cid, diff_type)) in change_log_iter {
         // Skip unchanged files -- mark changed files as base
         if diff_type == &ChangeType::Base {
-            continue; 
+            continue;
         }
         // updates.insert(path.clone(), (cid.clone(), ChangeType::Staged));
 
         let working_path = working_dir.join(path);
         if diff_type == &ChangeType::Added || diff_type == &ChangeType::Modified {
             // Add the file to the local ipfs node
-            let added_cid = device.push(&working_path).await?;
+            let added_cid = device.stage(&working_path).await?;
             // Make sure the cid matches the one in the change_log
             if added_cid != *cid {
                 return Err(StageError::CidMismatch(added_cid, cid.clone()));
@@ -40,7 +38,7 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
                 let object = Object::new(added_cid.clone());
                 update_dor_store.insert_object(path.clone(), object.clone());
             } else if diff_type == &ChangeType::Modified {
-                let mut d = update_dor_store.clone(); 
+                let mut d = update_dor_store.clone();
                 let object = d.update_object(path, added_cid.clone(), None);
                 update_dor_store.insert_object(path.clone(), object.clone());
             }
@@ -57,6 +55,8 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
         tracing::info!("no changes to stage");
         return Ok(());
     }
+
+    update_dor_store.set_previous_root(last_root_cid);
 
     let update_root_cid = device.hash_dor_store(&update_dor_store).await?;
 

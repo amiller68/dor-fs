@@ -1,8 +1,8 @@
 use cid::Cid;
 
-use crate::device::DeviceError;
-use crate::cli::config::{Config, ConfigError};
 use crate::cli::changes::ChangeLog;
+use crate::cli::config::{Config, ConfigError};
+use crate::device::DeviceError;
 
 pub async fn pull(config: &Config) -> Result<(), PullError> {
     let on_disk_device = config.on_disk_device()?;
@@ -17,8 +17,8 @@ pub async fn pull(config: &Config) -> Result<(), PullError> {
     } else {
         config.set_root_cid(&root_cid)?;
     }
-    
-    let mut dor_store = base_dor_store.clone(); 
+
+    let mut dor_store = base_dor_store.clone();
     if root_cid != Cid::default() {
         tracing::info!("root cid is not set");
         dor_store = device.pull_dor_store(&root_cid).await?;
@@ -33,19 +33,22 @@ pub async fn pull(config: &Config) -> Result<(), PullError> {
     let objects = dor_store.objects();
 
     for (path, object) in objects.iter() {
-        if !device.file_needs_pull(path, object.cid()).await? {
+        let working_path = config.working_dir().join(path);
+        if !device.file_needs_pull(&working_path, object.cid()).await? {
             continue;
         }
 
-        device.download_cid(object.cid(), &config.working_dir().join(path)).await?;
+        // TODO: this should use the gateway
+        device
+            .pull(object.cid(), &working_path)
+            .await?;
     }
 
     let change_log = ChangeLog::new(alias, &dor_store, &root_cid);
     config.set_change_log(change_log)?;
-    
+
     Ok(())
 }
-
 
 #[derive(Debug, thiserror::Error)]
 pub enum PullError {

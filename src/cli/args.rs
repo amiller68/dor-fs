@@ -1,5 +1,3 @@
-
-
 use clap::{command, Subcommand};
 use ethers::types::Address;
 use url::Url;

@@ -1,13 +1,12 @@
 use std::convert::TryFrom;
-use std::ops::Deref;
-use std::path::PathBuf;
 use std::fmt::Display;
+use std::ops::Deref;
+// use std::path::PathBuf;
 
-
-use cid::Cid;
+// use cid::Cid;
 use http::uri::Scheme;
 use ipfs_api_backend_hyper::{IpfsClient as HyperIpfsClient, TryFromUri};
-use reqwest::Client;
+// use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -59,16 +58,22 @@ impl From<IpfsRemote> for IpfsGateway {
 }
 
 impl IpfsGateway {
-    pub async fn get(&self, cid: &Cid, path: Option<PathBuf>) -> Result<Vec<u8>, IpfsError> {
-        let url = match path {
-            Some(p) => Url::parse(&format!("{}.ipfs.{}/{}", cid, self.0, p.display())),
-            None => Url::parse(&format!("{}.ipfs.{}", cid, self.0)),
-        }?;
-        let client = Client::builder().build()?;
-        let resp = client.get(url).send().await?;
-        let bytes = resp.bytes().await?;
-        Ok(bytes.to_vec())
-    }
+    // TODO: this isn't working quite right
+    // pub async fn get(&self, cid: &Cid, path: Option<PathBuf>) -> Result<Vec<u8>, IpfsError> {
+    //     let maybe_port = self.0.port();
+    //     let host_str = match maybe_port {
+    //         Some(port) => format!("{}:{}", self.0.host_str().unwrap(), port),
+    //         None => self.0.host_str().unwrap().to_string(),
+    //     };
+    //     let url = match path {
+    //         Some(p) => Url::parse(&format!("{}.ipfs.{}/{}", cid, host_str, p.display())),
+    //         None => Url::parse(&format!("{}.ipfs.{}", cid, host_str)),
+    //     }?;
+    //     let client = Client::builder().build()?;
+    //     let resp = client.get(url).send().await?;
+    //     let bytes = resp.bytes().await?;
+    //     Ok(bytes.to_vec())
+    // }
 }
 
 #[derive(Default)]

@@ -5,7 +5,7 @@ use crate::types::DorStore;
 
 mod log;
 
-pub use log::{DisplayableLog, Log, ChangeType};
+pub use log::{ChangeType, DisplayableLog, Log};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct ChangeLog {
@@ -30,6 +30,15 @@ impl ChangeLog {
         }
     }
 
+    pub fn wipe(&mut self, dor_store: &DorStore, root_cid: &Cid) {
+        let mut log = Log::new();
+        for (path, object) in dor_store.objects().iter() {
+            log.insert(path.clone(), (object.cid().clone(), ChangeType::Base));
+        }
+        self.log = log;
+        self.versions = vec![(root_cid.clone(), dor_store.clone())];
+    }
+
     pub fn update(&mut self, log: &Log, dor_store: &DorStore, root_cid: &Cid) {
         self.log = log.clone();
         self.versions.push((root_cid.clone(), dor_store.clone()));
@@ -47,6 +56,9 @@ impl ChangeLog {
         DisplayableLog(self.log.clone())
     }
 
+    pub fn first_version(&self) -> Option<&(Cid, DorStore)> {
+        self.versions.first()
+    }
 
     pub fn last_version(&self) -> Option<&(Cid, DorStore)> {
         self.versions.last()

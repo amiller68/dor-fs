@@ -1,7 +1,6 @@
 use cid::Cid;
 use ethers::abi::{InvalidOutputType, Tokenizable};
 
-
 // TODO: I should just write a boilerplate wrapper class for Cids for doing just this
 // i have to do stuff like this often enough
 

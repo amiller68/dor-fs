@@ -1,10 +1,10 @@
-use std::{env, io::Write, path::PathBuf};
 use std::fs::create_dir_all;
+use std::{env, io::Write, path::PathBuf};
 
 use cid::Cid;
-use fs_tree::FsTree;
-use ethers::types::Address;
 use ethers::signers::LocalWallet;
+use ethers::types::Address;
+use fs_tree::FsTree;
 
 use crate::cli::changes::ChangeLog;
 use crate::device::eth::EthRemote;
@@ -85,21 +85,21 @@ impl Config {
     }
 
     /// Get the next fs-tree from the working directory           
-pub fn fs_tree(&self) -> Result<FsTree, ConfigError> {
-    let working_dir = self.working_dir();
-    let dot_dir = PathBuf::from(DEFAULT_LOCAL_DOT_DIR); 
-    // Read Fs-tree at dir or pwd, stripping off the local dot directory
-    let next = match fs_tree::FsTree::read_at(working_dir.to_str().unwrap())? {
-        fs_tree::FsTree::Directory(mut d) => {
-            let _res = &d.remove_entry(&dot_dir);
-            fs_tree::FsTree::Directory(d)
-        }
-        _ => {
-            return Err(ConfigError::DotDirNotADirectory);
-        }
-    };
-    Ok(next)
-}
+    pub fn fs_tree(&self) -> Result<FsTree, ConfigError> {
+        let working_dir = self.working_dir();
+        let dot_dir = PathBuf::from(DEFAULT_LOCAL_DOT_DIR);
+        // Read Fs-tree at dir or pwd, stripping off the local dot directory
+        let next = match fs_tree::FsTree::read_at(working_dir.to_str().unwrap())? {
+            fs_tree::FsTree::Directory(mut d) => {
+                let _res = &d.remove_entry(&dot_dir);
+                fs_tree::FsTree::Directory(d)
+            }
+            _ => {
+                return Err(ConfigError::DotDirNotADirectory);
+            }
+        };
+        Ok(next)
+    }
     pub fn with_device_alias(&mut self, alias: String) -> &Self {
         self.device_alias = Some(alias);
         self
@@ -124,9 +124,9 @@ pub fn fs_tree(&self) -> Result<FsTree, ConfigError> {
     /* Members */
 
     pub fn init(&self) -> Result<(), ConfigError> {
-        let alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?; 
+        let alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
         let dot_path = self.working_dir.join(DEFAULT_LOCAL_DOT_DIR);
-        
+
         // Check if the dot path exists
         if dot_path.exists() {
             return Ok(());
@@ -135,7 +135,7 @@ pub fn fs_tree(&self) -> Result<FsTree, ConfigError> {
 
         let root_cid = self.root_cid()?;
         let base = self.base()?;
-        
+
         let change_log_path = dot_path.join(CHANGE_LOG_NAME);
         let change_log = ChangeLog::new(alias, &base, &root_cid);
         let change_log_str = serde_json::to_string_pretty(&change_log)?;
@@ -203,7 +203,9 @@ pub fn fs_tree(&self) -> Result<FsTree, ConfigError> {
         let device = Device::try_from(device_config).unwrap();
         match self.admin_key_string.clone() {
             Some(admin_key_string) => {
-                let admin_key = admin_key_string.parse::<LocalWallet>().expect("invalid key");
+                let admin_key = admin_key_string
+                    .parse::<LocalWallet>()
+                    .expect("invalid key");
                 let device = device.with_wallet(admin_key);
                 Ok(device)
             }
@@ -214,7 +216,6 @@ pub fn fs_tree(&self) -> Result<FsTree, ConfigError> {
     pub fn device_alias(&self) -> Option<String> {
         self.device_alias.clone()
     }
-        
 
     pub fn set_device(alias: String) -> Result<(), ConfigError> {
         let mut on_disk_config = OnDiskDefault::load()?;
@@ -248,7 +249,6 @@ pub enum ConfigError {
     Cid(#[from] cid::Error),
     #[error("fs tree error: {0}")]
     FsTree(#[from] fs_tree::Error),
-
 }
 
 /// Grab config path

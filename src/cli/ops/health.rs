@@ -7,7 +7,7 @@ use crate::cli::config::{Config, ConfigError};
 // TODO: check if all services are reachable, print out relevant config info in a pretty way
 pub async fn health(config: &Config) -> Result<(), HealthError> {
     let device = config.device()?;
-    
+
     let alias = config.device_alias();
 
     let chain_id = device.chain_id();
@@ -48,7 +48,7 @@ impl Display for HealthReport {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let alias = match &self.alias {
             Some(alias) => alias,
-            None =>  return write!(f, "no device configured"),
+            None => return write!(f, "no device configured"),
         };
 
         let chain_id = self.chain_id;
@@ -67,11 +67,7 @@ impl Display for HealthReport {
         } else {
             "offline"
         };
-        let eth_online = if self.eth_online {
-            "online"
-        } else {
-            "offline"
-        };
+        let eth_online = if self.eth_online { "online" } else { "offline" };
 
         write!(
             f,

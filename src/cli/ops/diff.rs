@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 use cid::Cid;
 
-use crate::device::DeviceError;
-use crate::cli::config::{Config, ConfigError};
 use crate::cli::changes::{ChangeType, Log};
+use crate::cli::config::{Config, ConfigError};
+use crate::device::DeviceError;
 
 pub async fn diff(config: &Config) -> Result<Log, DiffError> {
     let device = config.device()?;

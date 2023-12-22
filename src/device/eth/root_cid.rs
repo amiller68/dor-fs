@@ -2,13 +2,13 @@ use cid::Cid;
 use ethers::{
     abi::Abi,
     prelude::*,
-    types::{Address, TransactionRequest},
     signers::LocalWallet,
+    types::{Address, TransactionRequest},
 };
 use serde_json::Value;
 
-use super::{EthClient, EthClientError};
 use super::cid_token::CidToken;
+use super::{EthClient, EthClientError};
 
 const ABI_STRING: &str = include_str!("../../../out/RootCid.sol/RootCid.json");
 
@@ -18,8 +18,6 @@ pub enum RootCidError {
     EthClient(#[from] EthClientError),
     #[error("No signer")]
     MissingSigner,
-    #[error("Missing address")]
-    MissingAddress,
     #[error("abi error: {0}")]
     Abi(#[from] ethers::abi::Error),
     #[error("serde json error: {0}")]
@@ -30,9 +28,11 @@ pub enum RootCidError {
 
 pub struct RootCid(EthClient);
 
-impl RootCid {    
+impl RootCid {
     pub fn new(
-        eth_client: EthClient, address: Address, signer: Option<LocalWallet>
+        eth_client: EthClient,
+        address: Address,
+        signer: Option<LocalWallet>,
     ) -> Result<Self, RootCidError> {
         let eth_client = match signer {
             Some(signer) => eth_client.with_signer(signer)?,
@@ -46,37 +46,38 @@ impl RootCid {
         Ok(Self(client.clone()))
     }
 
-    /// Grant the given address the ability to update the contract cid
-    pub async fn grant_writer(
-        &self,
-        _grantee_address: Address,
-    ) -> Result<Option<TransactionReceipt>, RootCidError> {
-        // TODO: This is janky, but we should have the contract available by now
-        let contract = self.0.contract().unwrap();
-        let address = contract.address();
-        let chain_id = self.0.chain_id();
-        let signer = match self.0.signer() {
-            Some(signer) => signer,
-            None => return Err(RootCidError::MissingSigner),
-        };
-        
-        let data = contract
-            .encode("grantWriter", (address,))
-            .map_err(|e| RootCidError::Default(e.to_string()))?;
-        
-        let tx = TransactionRequest::new()
-            .to(contract.address())
-            .data(data)
-            .chain_id(chain_id);
-                let signed_tx = signer
-                    .send_transaction(tx, None)
-                    .await
-                    .map_err(|e| RootCidError::Default(e.to_string()))?;
-                let reciept = signed_tx
-                    .await
-                    .map_err(|e| RootCidError::Default(e.to_string()))?;
-                Ok(reciept)
-    }
+    // TODO: grant writer workflow
+    // /// Grant the given address the ability to update the contract cid
+    // pub async fn grant_writer(
+    //     &self,
+    //     _grantee_address: Address,
+    // ) -> Result<Option<TransactionReceipt>, RootCidError> {
+    //     // TODO: This is janky, but we should have the contract available by now
+    //     let contract = self.0.contract().unwrap();
+    //     let address = contract.address();
+    //     let chain_id = self.0.chain_id();
+    //     let signer = match self.0.signer() {
+    //         Some(signer) => signer,
+    //         None => return Err(RootCidError::MissingSigner),
+    //     };
+
+    //     let data = contract
+    //         .encode("grantWriter", (address,))
+    //         .map_err(|e| RootCidError::Default(e.to_string()))?;
+
+    //     let tx = TransactionRequest::new()
+    //         .to(contract.address())
+    //         .data(data)
+    //         .chain_id(chain_id);
+    //     let signed_tx = signer
+    //         .send_transaction(tx, None)
+    //         .await
+    //         .map_err(|e| RootCidError::Default(e.to_string()))?;
+    //     let reciept = signed_tx
+    //         .await
+    //         .map_err(|e| RootCidError::Default(e.to_string()))?;
+    //     Ok(reciept)
+    // }
 
     /* CRUD */
 
@@ -84,7 +85,7 @@ impl RootCid {
     pub async fn read(&self) -> Result<Cid, RootCidError> {
         // TODO: This is janky, but we should have the contract available by now
         let contract = self.0.contract().unwrap();
-        
+
         let cid: Cid = contract
             .method::<_, CidToken>("read", ())
             .map_err(|e| RootCidError::Default(e.to_string()))?
@@ -110,19 +111,22 @@ impl RootCid {
             None => return Err(RootCidError::MissingSigner),
         };
         let data = contract
-            .encode("update", (CidToken::from(previous_cid), CidToken::from(cid)))
+            .encode(
+                "update",
+                (CidToken::from(previous_cid), CidToken::from(cid)),
+            )
             .map_err(|e| RootCidError::Default(e.to_string()))?;
         let tx = TransactionRequest::new()
             .to(contract.address())
             .data(data)
             .chain_id(chain_id);
-                let signed_tx = signer
-                    .send_transaction(tx, None)
-                    .await
-                    .map_err(|e| RootCidError::Default(e.to_string()))?;
-                let reciept = signed_tx
-                    .await
-                    .map_err(|e| RootCidError::Default(e.to_string()))?;
-                Ok(reciept)
-        }
+        let signed_tx = signer
+            .send_transaction(tx, None)
+            .await
+            .map_err(|e| RootCidError::Default(e.to_string()))?;
+        let reciept = signed_tx
+            .await
+            .map_err(|e| RootCidError::Default(e.to_string()))?;
+        Ok(reciept)
+    }
 }

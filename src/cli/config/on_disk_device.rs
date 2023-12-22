@@ -1,11 +1,11 @@
 use std::convert::TryFrom;
+use std::fmt::Display;
 use std::str::FromStr;
 use std::{
     fs::{create_dir_all, File},
     io::Write,
     path::PathBuf,
 };
-use std::fmt::Display;
 
 use cid::Cid;
 use ethers::signers::{LocalWallet, Wallet};
@@ -29,7 +29,6 @@ pub struct OnDiskDevice {
     alias: String,
 
     // Remote configuration
-    
     /// Address for the contract publishing our root cid
     contract_address: Address,
     /// Connection to an EthRemote
