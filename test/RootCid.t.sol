@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import {RootCid} from "../src/root_cid/RootCid.sol";
+import {RootCid} from "../src/device/eth/RootCid.sol";
 
 contract CounterTest is Test {
     bytes32 foo = "foo";

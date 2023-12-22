@@ -19,17 +19,17 @@ pub struct DorStore {
 }
 
 impl DorStore {
-    pub fn new() -> Self {
-        Self {
-            object_set: ObjectSet::default(),
-            previous_root: Cid::default(),
-            version: Version::new(),
-        }
-    }
+    // pub fn new() -> Self {
+    //     Self {
+    //         object_set: ObjectSet::default(),
+    //         previous_root: Cid::default(),
+    //         version: Version::new(),
+    //     }
+    // }
 
-    pub fn previous_root(&self) -> &Cid {
-        &self.previous_root
-    }
+    // pub fn previous_root(&self) -> &Cid {
+    //     &self.previous_root
+    // }
 
     pub fn set_previous_root(&mut self, cid: Cid) {
         self.previous_root = cid;

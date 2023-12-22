@@ -5,7 +5,15 @@ use std::path::PathBuf;
 use cid::Cid;
 use serde::{Deserialize, Serialize};
 
-// TODO: this type isn't quite right
+// TODO: this is an akward way to do this, i could probably
+// constructs diffs better
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub enum StagedType {
+    Added,
+    Modified,
+    Removed,
+}
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum ChangeType {
     Base,
@@ -28,9 +36,9 @@ impl std::fmt::Display for ChangeType {
 
 /// Tracks what files are in the local clone and their hashes
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct ChangeLog(BTreeMap<PathBuf, (Cid, ChangeType)>);
+pub struct Log(BTreeMap<PathBuf, (Cid, ChangeType)>);
 
-impl Deref for ChangeLog {
+impl Deref for Log {
     type Target = BTreeMap<PathBuf, (Cid, ChangeType)>;
 
     fn deref(&self) -> &Self::Target {
@@ -38,21 +46,21 @@ impl Deref for ChangeLog {
     }
 }
 
-impl DerefMut for ChangeLog {
+impl DerefMut for Log {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl ChangeLog {
+impl Log {
     pub fn new() -> Self {
         Self(BTreeMap::new())
     }
 }
 
-pub struct DisplayableChangeLog(pub ChangeLog);
+pub struct DisplayableLog(pub Log);
 
-impl std::fmt::Display for DisplayableChangeLog {
+impl std::fmt::Display for DisplayableLog {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
         for (path, (_hash, diff_type)) in self.0.iter() {
@@ -63,14 +71,4 @@ impl std::fmt::Display for DisplayableChangeLog {
         }
         write!(f, "{}", s)
     }
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum ChangeLogError {
-    #[error("could not read change_log: {0}")]
-    ReadChanges(#[from] serde_json::Error),
-    #[error("fs-tree error: {0}")]
-    FsTree(#[from] fs_tree::Error),
-    #[error("io error: {0}")]
-    Io(#[from] std::io::Error),
 }

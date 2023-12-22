@@ -1,11 +1,10 @@
 use std::fmt::{self, Display};
-use std::path::PathBuf;
 
 pub use super::args::{Args, Command, Parser};
-use super::config::{handle_config_subcommand, Config, ConfigError};
+use super::config::{Config, ConfigError};
 use super::ops::{
-    diff, health, pull, push, stage, stat, DiffError, HealthError, PullError, PushError,
-    StageError, StatError,
+    device_subcommand, health, init, pull, push, stage, DeviceSubcommandError, HealthError,
+    InitError, PullError, PushError, StageError,
 };
 
 pub struct App;
@@ -18,46 +17,30 @@ impl App {
 
     async fn run_result() -> Result<(), AppError> {
         let args = Args::parse();
-        let config = Config::parse(&args)?;
+        let config = Config::parse_args(&args)?;
         match args.command {
+            Command::Device { subcommand } => {
+                device_subcommand(&config, &subcommand)?;
+            }
+            Command::Health => {
+                health(&config).await?;
+            }
             Command::Init => {
-                // i don't do anything lol
+                init(&config)?;
             }
-            Command::Configure { subcommand } => {
-                handle_config_subcommand(&config, subcommand)?;
+            Command::Pull => {
+                pull(&config).await?;
             }
-            Command::Health { dir } => {
-                let working_dir = working_dir(dir)?;
-                health(&config, working_dir).await?;
+            Command::Stage => {
+                stage(&config).await?;
             }
-            Command::Wipe { dir: _ } => {
-                // wipe(&config, dir)?;
+            Command::Stat => {
+                let change_log = config.change_log()?;
+                let displayable_change_log = change_log.displayable();
+                println!("{}", displayable_change_log);
             }
-            Command::Clone { dir: _ } => {
-                // clone(&config, dir)?;
-            }
-            // TODO: this is more like 'add'
-            Command::Diff { dir } => {
-                let working_dir = working_dir(dir)?;
-                diff(&config, working_dir).await?;
-            }
-            Command::Stat { dir } => {
-                let working_dir = working_dir(dir)?;
-                let diff = stat(&config, working_dir)?;
-                print!("{}", diff);
-            }
-            // TODO: this is more like 'commit'
-            Command::Stage { dir } => {
-                let working_dir = working_dir(dir)?;
-                stage(&config, working_dir).await?;
-            }
-            Command::Push { dir } => {
-                let working_dir = working_dir(dir)?;
-                push(&config, working_dir).await?;
-            }
-            Command::Pull { dir } => {
-                let working_dir = working_dir(dir)?;
-                pull(&config, working_dir).await?;
+            Command::Push => {
+                push(&config).await?;
             }
         }
         Ok(())
@@ -67,11 +50,9 @@ impl App {
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
     Config(#[from] ConfigError),
-    FsTree(#[from] fs_tree::Error),
-    Io(#[from] std::io::Error),
+    DeviceSubcommand(#[from] DeviceSubcommandError),
+    Init(#[from] InitError),
     Health(#[from] HealthError),
-    Stat(#[from] StatError),
-    Diff(#[from] DiffError),
     Stage(#[from] StageError),
     Push(#[from] PushError),
     Pull(#[from] PullError),
@@ -83,13 +64,6 @@ fn capture_error<T>(result: Result<T, AppError>) {
         Err(e) => {
             eprintln!("{}", e);
         }
-    }
-}
-
-fn working_dir(dir: Option<String>) -> Result<PathBuf, AppError> {
-    match dir {
-        Some(dir) => Ok(PathBuf::from(dir)),
-        None => std::env::current_dir().map_err(AppError::Io),
     }
 }
 

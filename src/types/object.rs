@@ -58,25 +58,25 @@ impl Object {
         self.updated_at = Utc::now();
     }
 
-    pub fn created_at(&self) -> &DateTime<Utc> {
-        &self.created_at
-    }
-    pub fn updated_at(&self) -> &DateTime<Utc> {
-        &self.updated_at
-    }
+    // pub fn created_at(&self) -> &DateTime<Utc> {
+    //     &self.created_at
+    // }
+    // pub fn updated_at(&self) -> &DateTime<Utc> {
+    //     &self.updated_at
+    // }
 
     pub fn cid(&self) -> &Cid {
         &self.cid
     }
-    pub fn metadata(&self) -> &Value {
-        &self.metadata
-    }
+    // pub fn metadata(&self) -> &Value {
+    //     &self.metadata
+    // }
 
-    pub fn set_updated_at(&mut self, updated_at: DateTime<Utc>) {
-        self.updated_at = updated_at;
-    }
+    // pub fn set_updated_at(&mut self, updated_at: DateTime<Utc>) {
+    //     self.updated_at = updated_at;
+    // }
 
-    pub fn set_metadata(&mut self, metadata: Value) {
-        self.metadata = metadata;
-    }
+    // pub fn set_metadata(&mut self, metadata: Value) {
+    //     self.metadata = metadata;
+    // }
 }
