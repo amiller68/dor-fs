@@ -1,9 +1,15 @@
 use std::fmt::{self, Display};
-use std::path::PathBuf;
+
 
 pub use super::args::{Args, Command, Parser};
 use super::config::{Config, ConfigError};
-use super::ops::{device_subcommand, DeviceSubcommandError};
+use super::ops::{
+    
+    device_subcommand,
+    health,
+     DeviceSubcommandError,
+    HealthError,
+};
 
 pub struct App;
 
@@ -20,7 +26,9 @@ impl App {
             Command::Device { subcommand } => {
                 device_subcommand(&config, &subcommand)?;
             }
-            Command::Health => {}
+            Command::Health => {
+                health(&config).await?;
+            }
             Command::Init => {}
             Command::Pull => {}
             Command::Stage => {}
@@ -39,7 +47,7 @@ impl App {
 pub enum AppError {
     Config(#[from] ConfigError),
     DeviceSubcommand(#[from] DeviceSubcommandError),
-    // Health(#[from] HealthError),
+    Health(#[from] HealthError),
     // Stat(#[from] StatError),
     // Diff(#[from] DiffError),
     // Stage(#[from] StageError),

@@ -1,7 +1,9 @@
 use std::{env, io::Write, path::PathBuf};
 
+
 use cid::Cid;
 use ethers::types::Address;
+use ethers::signers::LocalWallet;
 
 use crate::cli::changes::ChangeLog;
 use crate::device::eth::EthRemote;
@@ -10,7 +12,7 @@ use crate::device::Device;
 use crate::types::DorStore;
 
 mod on_disk_default;
-mod on_disk_device;
+pub mod on_disk_device;
 
 use on_disk_default::OnDiskDefault;
 use on_disk_device::OnDiskDevice;
@@ -84,6 +86,22 @@ impl Config {
 
     /* Methods */
 
+    pub fn list_on_disk_devices() -> Result<Vec<OnDiskDevice>, ConfigError> {
+        OnDiskDevice::list()
+    }
+
+    pub fn create_on_disk_device(
+        alias: String,
+        contract_address: Address,
+        ipfs_remote: IpfsRemote,
+        eth_remote: EthRemote,
+    ) -> Result<OnDiskDevice, ConfigError> {
+        let device = OnDiskDevice::new(alias, ipfs_remote, eth_remote, contract_address)?;
+        Ok(device)
+    }
+
+    /* Members */
+
     pub fn change_log(&self) -> Result<ChangeLog, ConfigError> {
         let dot_path = self.working_dir.join(DEFAULT_LOCAL_DOT_DIR);
         let change_log_path = dot_path.join(CHANGE_LOG_NAME);
@@ -135,32 +153,30 @@ impl Config {
         let device_alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
         let device_config = OnDiskDevice::load(device_alias)?;
         let device = Device::try_from(device_config).unwrap();
-        Ok(device)
+        match self.admin_key_string.clone() {
+            Some(admin_key_string) => {
+                let admin_key = admin_key_string.parse::<LocalWallet>().expect("invalid key");
+                let device = device.with_wallet(admin_key);
+                Ok(device)
+            }
+            None => Ok(device),
+        }
     }
+
+    pub fn device_alias(&self) -> Option<String> {
+        self.device_alias.clone()
+    }
+        
 
     pub fn set_device(alias: String) -> Result<(), ConfigError> {
         let mut on_disk_config = OnDiskDefault::load()?;
         on_disk_config.set_device_alias(alias)
     }
 
-    pub fn create_on_disk_device(
-        alias: String,
-        contract_address: Address,
-        ipfs_remote: IpfsRemote,
-        eth_remote: EthRemote,
-    ) -> Result<OnDiskDevice, ConfigError> {
-        let device = OnDiskDevice::new(alias, ipfs_remote, eth_remote, contract_address)?;
-        Ok(device)
-    }
-
     pub fn on_disk_device(&self) -> Result<OnDiskDevice, ConfigError> {
         let device_alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
         let device_config = OnDiskDevice::load(device_alias)?;
         Ok(device_config)
-    }
-
-    pub fn list_on_disk_devices(&self) -> Result<Vec<OnDiskDevice>, ConfigError> {
-        OnDiskDevice::list()
     }
 }
 

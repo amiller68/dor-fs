@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::fmt::Display;
 
 use ethers::{
     abi::Abi,
@@ -11,13 +12,25 @@ use ethers::{
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+mod root_cid;
+mod cid_token;
+
+pub use root_cid::{RootCid, RootCidError};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthRemote {
     pub rpc_url: Url,
     pub chain_id: u16,
 }
 
+impl Display for EthRemote {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "rpc: {}, chain_id: {}", self.rpc_url, self.chain_id)
+    }
+}
+
 /// Client for interacting with the EVM over Http
+#[derive(Debug, Clone)]
 pub struct EthClient {
     provider: Provider<Http>,
     chain_id: u16,
@@ -57,7 +70,7 @@ impl EthClient {
     }
 
     /// Attach SignerMiddleware to the client
-    pub fn with_signer(&mut self, wallet: LocalWallet) -> Result<&Self, EthClientError> {
+    pub fn with_signer(mut self, wallet: LocalWallet) -> Result<Self, EthClientError> {
         let wallet = wallet.with_chain_id(self.chain_id);
         let signer = SignerMiddleware::new(self.provider.clone(), wallet);
         self.signer = Some(signer);
@@ -65,7 +78,7 @@ impl EthClient {
     }
 
     /// Attach a Contract to the client
-    pub fn with_contract(&mut self, address: Address, abi: Abi) -> Result<&Self, EthClientError> {
+    pub fn with_contract(mut self, address: Address, abi: Abi) -> Result<Self, EthClientError> {
         let contract = Contract::new(address, abi, Arc::new(self.provider.clone()));
         self.contract = Some(contract);
         Ok(self)

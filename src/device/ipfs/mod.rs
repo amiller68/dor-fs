@@ -1,7 +1,8 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 use std::path::PathBuf;
-use std::str::FromStr;
+use std::fmt::Display;
+
 
 use cid::Cid;
 use http::uri::Scheme;
@@ -30,6 +31,15 @@ impl Default for IpfsRemote {
             api_url: Url::parse("http://127.0.0.1:5001").unwrap(),
             gateway_url: Url::parse("http://127.0.0.1:8080").unwrap(),
         }
+    }
+}
+
+impl Display for IpfsRemote {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let api_url = self.api_url.clone();
+        let gateway_url = self.gateway_url.clone();
+        // Make it look nice, bespoke, and multinelined
+        write!(f, "api_url: {}\ngateway_url: {}", api_url, gateway_url)
     }
 }
 

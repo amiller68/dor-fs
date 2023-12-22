@@ -1,3 +1,4 @@
+
 use crate::cli::args::DeviceSubcommand;
 use crate::cli::config::{Config, ConfigError};
 use crate::device::eth::EthRemote;
@@ -18,7 +19,7 @@ pub fn device_subcommand(
         } => {
             let eth_remote = EthRemote {
                 rpc_url: eth_rpc.clone(),
-                chain_id: eth_chain_id.clone(),
+                chain_id: *eth_chain_id,
             };
             let ipfs_remote = IpfsRemote {
                 api_url: ipfs_url.clone(),
@@ -26,18 +27,18 @@ pub fn device_subcommand(
             };
             Config::create_on_disk_device(
                 alias.clone(),
-                contract_address.clone(),
+                *contract_address,
                 ipfs_remote,
                 eth_remote,
             )?;
         }
         DeviceSubcommand::Update {
-            alias,
-            eth_rpc,
-            eth_chain_id,
-            contract_address,
-            ipfs_url,
-            ipfs_gateway_url,
+            alias: _,
+            eth_rpc: _,
+            eth_chain_id: _,
+            contract_address: _,
+            ipfs_url: _,
+            ipfs_gateway_url: _,
         } => {
             todo!()
         }
@@ -45,10 +46,10 @@ pub fn device_subcommand(
             Config::set_device(alias.clone())?;
         }
         DeviceSubcommand::Ls => {
-            // println!("{}", Config::list_on_disk_devices()?);
+            println!("{:?}", Config::list_on_disk_devices()?);
         }
         DeviceSubcommand::Show => {
-            // println!("{}", config.on_disk_device()?);
+            println!("{}", config.on_disk_device()?);
         }
     }
     Ok(())
@@ -59,3 +60,4 @@ pub enum DeviceSubcommandError {
     #[error("config error: {0}")]
     Config(#[from] ConfigError),
 }
+

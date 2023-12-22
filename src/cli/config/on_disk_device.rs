@@ -5,6 +5,7 @@ use std::{
     io::Write,
     path::PathBuf,
 };
+use std::fmt::Display;
 
 use cid::Cid;
 use ethers::signers::{LocalWallet, Wallet};
@@ -25,8 +26,10 @@ use super::{
 /// An OnDiskDevice Configuration
 /// Specifies both connection to remote, and api for managing device state via an alias
 pub struct OnDiskDevice {
-    alias: String,
+    pub alias: String,
+
     // Remote configuration
+    
     /// Address for the contract publishing our root cid
     contract_address: Address,
     /// Connection to an EthRemote
@@ -47,10 +50,11 @@ impl OnDiskDevice {
         let xdg_path = xdg_config_home()?;
         let device_path = xdg_path.join(alias.clone());
 
+        // TODO: re-enable this check
         // Check if the device already exists
-        if device_path.exists() {
-            return Err(ConfigError::DeviceExists(alias.clone()));
-        }
+        // if device_path.exists() {
+        //     return Err(ConfigError::DeviceExists(alias.clone()));
+        // }
 
         create_dir_all(&device_path)?;
 
@@ -105,7 +109,7 @@ impl OnDiskDevice {
     }
 
     /// Update the on disk device configuration
-    pub fn update(
+    pub fn _update(
         alias: String,
         ipfs_remote: Option<IpfsRemote>,
         eth_remote: Option<EthRemote>,
@@ -131,7 +135,7 @@ impl OnDiskDevice {
     pub fn keystore(alias: String) -> Result<LocalWallet, ConfigError> {
         let device_path = device_path(alias.clone())?;
         let keystore_path = device_path.join(DEVICE_KEYSTORE_NAME);
-        let wallet = LocalWallet::decrypt_keystore(&keystore_path, "").unwrap();
+        let wallet = LocalWallet::decrypt_keystore(keystore_path, "").unwrap();
         Ok(wallet)
     }
 
@@ -200,6 +204,7 @@ impl TryFrom<OnDiskDevice> for Device {
         let wallet = OnDiskDevice::keystore(alias.clone())?;
 
         let device = Device {
+            contract_address,
             eth,
             ipfs,
             ipfs_gateway,
@@ -207,6 +212,21 @@ impl TryFrom<OnDiskDevice> for Device {
         };
 
         Ok(device)
+    }
+}
+
+impl Display for OnDiskDevice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let eth_remote = self.eth_remote.clone();
+        let ipfs_remote = self.ipfs_remote.clone();
+        let contract_address = self.contract_address;
+        let alias = self.alias.clone();
+
+        write!(
+            f,
+            "alias: {}, eth_remote: {}, ipfs_remote: {}, contract_address: {}",
+            alias, eth_remote, ipfs_remote, contract_address
+        )
     }
 }
 

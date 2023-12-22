@@ -5,7 +5,7 @@ use crate::types::DorStore;
 
 mod log;
 
-pub use log::{ChangeType, DisplayableLog, Log};
+pub use log::{DisplayableLog, Log};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct ChangeLog {

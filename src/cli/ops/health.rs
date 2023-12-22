@@ -1,37 +1,84 @@
-use std::path::PathBuf;
+use std::fmt::Display;
+
+use cid::Cid;
 
 use crate::cli::config::{Config, ConfigError};
-use crate::root_cid::{EthClient, EthClientError};
-
-use super::utils::load_root_cid;
 
 // TODO: check if all services are reachable, print out relevant config info in a pretty way
-pub async fn health(_config: &Config, working_dir: PathBuf) -> Result<(), HealthError> {
-    let eth_remote = match _config.eth_remote() {
-        Some(eth_remote) => eth_remote,
-        None => {
-            tracing::info!("eth_remote not configured");
-            return Ok(());
-        }
+pub async fn health(config: &Config) -> Result<(), HealthError> {
+    let device = config.device()?;
+    
+    let alias = config.device_alias();
+    let root_cid = match device.get_root_cid().await {
+        Ok(root_cid) => Some(root_cid),
+        Err(_) => None,
+    };
+    let eth_online = root_cid.is_some();
+
+    let local_ipfs_online = match device.local_id().await {
+        Ok(_) => true,
+        Err(_) => false,
     };
 
-    let ipfs_remote = match _config.ipfs_remote() {
-        Some(ipfs_remote) => ipfs_remote,
-        None => {
-            tracing::info!("ipfs_remote not configured");
-            return Ok(());
-        }
+    let ipfs_online = match device.remote_id().await {
+        Ok(_) => true,
+        Err(_) => false,
     };
 
-    let eth_client = EthClient::try_from(eth_remote)?;
-    let root_cid = eth_client.read().await?;
+    let report = HealthReport {
+        alias,
+        root_cid,
+        local_ipfs_online,
+        ipfs_online,
+        eth_online,
+    };
 
-    // let root_cid = load_root_cid(working_dir.clone())?;
-    println!("root_cid: {}", root_cid);
+    println!("{}", report);
     Ok(())
 }
 
-struct HealthReport;
+struct HealthReport {
+    alias: Option<String>,
+    root_cid: Option<Cid>,
+    local_ipfs_online: bool,
+    ipfs_online: bool,
+    eth_online: bool,
+}
+
+impl Display for HealthReport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let alias = match &self.alias {
+            Some(alias) => alias,
+            None =>  return write!(f, "no device configured"),
+        };
+
+        let root_cid = match &self.root_cid {
+            Some(root_cid) => root_cid.to_string(),
+            None => "not configured".to_string(),
+        };
+        let local_ipfs_online = if self.local_ipfs_online {
+            "online"
+        } else {
+            "offline"
+        };
+        let ipfs_online = if self.ipfs_online {
+            "online"
+        } else {
+            "offline"
+        };
+        let eth_online = if self.eth_online {
+            "online"
+        } else {
+            "offline"
+        };
+
+        write!(
+            f,
+            "alias: {}, root_cid: {}, local_ipfs: {}, ipfs: {}, eth: {}",
+            alias, root_cid, local_ipfs_online, ipfs_online, eth_online
+        )
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum HealthError {
@@ -41,7 +88,4 @@ pub enum HealthError {
     Config(#[from] ConfigError),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-
-    #[error("eth error: {0}")]
-    Eth(#[from] EthClientError),
 }
