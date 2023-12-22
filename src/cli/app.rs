@@ -27,8 +27,9 @@ impl App {
                 handle_config_subcommand(&config, subcommand)?;
             }
             Command::Health { dir } => {
-                let working_dir = working_dir(dir)?;
-                health(&config, working_dir).await?;
+                // let working_dir = working_dir(dir)?;
+                println!("{:?}", dir);
+                //health(&config, working_dir).await?;
             }
             Command::Wipe { dir: _ } => {
                 // wipe(&config, dir)?;

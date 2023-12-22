@@ -3,16 +3,16 @@ use std::io::Cursor;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use super::utils::{load_dor_store, save_dor_store, save_root_cid, load_root_cid};
+use super::utils::{load_dor_store, load_root_cid, save_dor_store, save_root_cid};
 use cid::Cid;
 
 use crate::cli::config::{Config, ConfigError};
-use crate::root_cid::{EthClient, EthClientError};
 use crate::ipfs::{add_file_request, IpfsApi, IpfsClient, IpfsClientError, IpfsError};
+use crate::root_cid::{EthClient, EthClientError};
 
 pub async fn push(config: &Config, working_dir: PathBuf) -> Result<(), PushError> {
-    let root_cid = load_root_cid(working_dir.clone())?; 
-    
+    let root_cid = load_root_cid(working_dir.clone())?;
+
     let remote_ipfs_client = match config.ipfs_remote() {
         Some(ipfs_remote) => IpfsClient::try_from(ipfs_remote.clone())?,
         None => {

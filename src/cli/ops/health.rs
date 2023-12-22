@@ -5,7 +5,6 @@ use crate::root_cid::{EthClient, EthClientError};
 
 use super::utils::load_root_cid;
 
-
 // TODO: check if all services are reachable, print out relevant config info in a pretty way
 pub async fn health(_config: &Config, working_dir: PathBuf) -> Result<(), HealthError> {
     let eth_remote = match _config.eth_remote() {

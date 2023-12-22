@@ -1,6 +1,5 @@
 mod cli;
-mod ipfs;
-mod root_cid;
+mod device;
 mod types;
 
 pub mod prelude {

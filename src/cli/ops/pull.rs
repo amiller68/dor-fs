@@ -10,7 +10,7 @@ use crate::root_cid::{EthClient, EthClientError};
 use crate::types::DorStore;
 
 use super::diff::{file_cid, DiffError};
-use super::utils::{save_root_cid, save_dor_store, load_root_cid, load_dor_store};
+use super::utils::{load_dor_store, load_root_cid, save_dor_store, save_root_cid};
 
 // TODO: eth
 pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError> {
@@ -19,7 +19,7 @@ pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError
         None => {
             return Err(PullError::MissingEthRemote);
         }
-    };    
+    };
     let remote_ipfs_client = match config.ipfs_remote() {
         Some(ipfs_remote) => IpfsClient::try_from(ipfs_remote.clone())?,
         None => {
@@ -32,13 +32,13 @@ pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError
     if root_cid == Cid::default() || root_cid == _root_cid {
         tracing::info!("root cid is up to date");
     }
-    
+
     let _dor_store = load_dor_store(working_dir.clone())?;
     let dor_store = pull_dor_store(&root_cid, &remote_ipfs_client).await?;
     if dor_store == _dor_store {
         tracing::info!("dor store is up to date");
     }
-    
+
     let objects = dor_store.objects();
 
     for (path, object) in objects.iter() {
@@ -47,7 +47,7 @@ pub async fn pull(config: &Config, working_dir: PathBuf) -> Result<(), PullError
         }
 
         // Download the block from the remote, mkdir -p the path, write the block to the path
-        let block_data = pull_block(object.cid(),  &remote_ipfs_client).await?;
+        let block_data = pull_block(object.cid(), &remote_ipfs_client).await?;
         let mut object_path = working_dir.join(path);
         object_path.pop();
         std::fs::create_dir_all(object_path)?;
@@ -84,10 +84,7 @@ async fn path_needs_pull(path: &PathBuf, cid: &Cid) -> Result<bool, PullError> {
 // TODO: you should try reading locally first
 /// Attempt to pull a block from the remote
 /// Return the block data as a Vec<u8>
-async fn pull_block(
-    cid: &Cid,
-    remote_ipfs_client: &IpfsClient,
-) -> Result<Vec<u8>, PullError> {
+async fn pull_block(cid: &Cid, remote_ipfs_client: &IpfsClient) -> Result<Vec<u8>, PullError> {
     let block_stream = remote_ipfs_client.block_get(&cid.to_string());
     let block_data = block_stream
         .map_ok(|chunk| chunk.to_vec())
