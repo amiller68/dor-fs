@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @title Root CID Contract
 /// @author Alex Miller
-/// @notice This contract is a simple pointer to a metadata file on IPFS
+/// @notice This contract is a simple pointer to a dor-store file on IPFS
 
 contract RootCid is AccessControl {
   // We're opting for 512 bit Cids, so we'll need two bytes32

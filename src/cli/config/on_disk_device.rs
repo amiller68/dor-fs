@@ -12,9 +12,9 @@ use ethers::signers::{LocalWallet, Wallet};
 use ethers::types::Address;
 use serde::{Deserialize, Serialize};
 
-use crate::device::eth::{EthClient, EthClientError, EthRemote};
-use crate::device::ipfs::{IpfsClient, IpfsError, IpfsGateway, IpfsRemote};
-use crate::device::Device;
+use crate::device::{
+    Device, EthClient, EthClientError, EthRemote, IpfsClient, IpfsError, IpfsGateway, IpfsRemote,
+};
 use crate::types::DorStore;
 
 use super::{
@@ -203,17 +203,19 @@ impl TryFrom<OnDiskDevice> for Device {
         let alias = on_disk_device.alias;
 
         let eth = EthClient::try_from(eth_remote)?;
-        let ipfs = IpfsClient::try_from(ipfs_remote.clone())?;
+        let local_ipfs_client = IpfsClient::default();
+        let ipfs_client = IpfsClient::try_from(ipfs_remote.clone())?;
         let ipfs_gateway = IpfsGateway::from(ipfs_remote);
         let wallet = OnDiskDevice::keystore(alias.clone())?;
 
-        let device = Device {
+        let device = Device::new(
             contract_address,
-            eth,
-            ipfs,
+            local_ipfs_client,
+            ipfs_client,
             ipfs_gateway,
+            eth,
             wallet,
-        };
+        );
 
         Ok(device)
     }

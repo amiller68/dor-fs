@@ -1,7 +1,6 @@
 use crate::cli::args::DeviceSubcommand;
 use crate::cli::config::{Config, ConfigError};
-use crate::device::eth::EthRemote;
-use crate::device::ipfs::IpfsRemote;
+use crate::device::{EthRemote, IpfsRemote};
 
 pub fn device_subcommand(
     config: &Config,
@@ -39,7 +38,7 @@ pub fn device_subcommand(
             ipfs_url: _,
             ipfs_gateway_url: _,
         } => {
-            todo!()
+            todo!("updating devices is not supported yet")
         }
         DeviceSubcommand::Set { alias } => {
             Config::set_device(alias.clone())?;

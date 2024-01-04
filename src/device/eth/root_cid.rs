@@ -12,20 +12,7 @@ use super::{EthClient, EthClientError};
 
 const ABI_STRING: &str = include_str!("../../../out/RootCid.sol/RootCid.json");
 
-#[derive(Debug, thiserror::Error)]
-pub enum RootCidError {
-    #[error("eth client error: {0}")]
-    EthClient(#[from] EthClientError),
-    #[error("No signer")]
-    MissingSigner,
-    #[error("abi error: {0}")]
-    Abi(#[from] ethers::abi::Error),
-    #[error("serde json error: {0}")]
-    SerdeJson(#[from] serde_json::Error),
-    #[error("default error: {0}")]
-    Default(String),
-}
-
+/// Wrapper around an EthClient for interacting with our RootCid contract
 pub struct RootCid(EthClient);
 
 impl RootCid {
@@ -35,18 +22,18 @@ impl RootCid {
         signer: Option<LocalWallet>,
     ) -> Result<Self, RootCidError> {
         let eth_client = match signer {
-            Some(signer) => eth_client.with_signer(signer)?,
+            Some(signer) => eth_client.with_signer(signer),
             None => eth_client,
         };
         let abi_value: Value = serde_json::from_str(ABI_STRING)?;
         let abi: Abi = serde_json::from_value(abi_value["abi"].clone())?;
 
-        let client = eth_client.with_contract(address, abi)?;
+        let client = eth_client.with_contract(address, abi);
         let client = client.clone();
         Ok(Self(client.clone()))
     }
 
-    // TODO: grant writer workflow
+    // TODO: grant writer workflow -- for now everything is admin controlled
     // /// Grant the given address the ability to update the contract cid
     // pub async fn grant_writer(
     //     &self,
@@ -129,4 +116,18 @@ impl RootCid {
             .map_err(|e| RootCidError::Default(e.to_string()))?;
         Ok(reciept)
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RootCidError {
+    #[error("eth client error: {0}")]
+    EthClient(#[from] EthClientError),
+    #[error("No signer")]
+    MissingSigner,
+    #[error("abi error: {0}")]
+    Abi(#[from] ethers::abi::Error),
+    #[error("serde json error: {0}")]
+    SerdeJson(#[from] serde_json::Error),
+    #[error("default error: {0}")]
+    Default(String),
 }

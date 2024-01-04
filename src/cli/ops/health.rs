@@ -12,15 +12,15 @@ pub async fn health(config: &Config) -> Result<(), HealthError> {
 
     let chain_id = device.chain_id();
 
-    let root_cid = match device.get_root_cid().await {
+    let root_cid = match device.read_root_cid().await {
         Ok(root_cid) => Some(root_cid),
         Err(_) => None,
     };
     let eth_online = root_cid.is_some();
 
-    let local_ipfs_online = device.local_id().await.is_ok();
+    let local_ipfs_online = device.ipfs_id(false).await.is_ok();
 
-    let ipfs_online = device.remote_id().await.is_ok();
+    let ipfs_online = device.ipfs_id(true).await.is_ok();
 
     let report = HealthReport {
         alias,
