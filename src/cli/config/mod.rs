@@ -7,9 +7,7 @@ use ethers::types::Address;
 use fs_tree::FsTree;
 
 use crate::cli::changes::ChangeLog;
-use crate::device::eth::EthRemote;
-use crate::device::ipfs::IpfsRemote;
-use crate::device::Device;
+use crate::device::{Device, EthRemote, IpfsRemote};
 use crate::types::DorStore;
 
 mod on_disk_default;

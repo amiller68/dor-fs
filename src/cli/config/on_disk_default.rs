@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use super::{xdg_config_home, ConfigError, DEFAULT_CONFIG_NAME};
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
-/// On Disk Cli Defaults
+/// On Disk Cli Defaults -- for now this is just the default device alias
 pub struct OnDiskDefault {
     /// Set device alias
     device_alias: Option<String>,

@@ -1,8 +1,18 @@
+use std::fs::File;
+use std::path::PathBuf;
+
 use cid::Cid;
 
 use crate::cli::config::{Config, ConfigError};
-use crate::device::DeviceError;
+use crate::device::{Device, DeviceError};
 use crate::types::DorStore;
+
+/// Push a file to the remote ipfs node
+pub async fn push_file(device: &Device, file_path: &PathBuf) -> Result<Cid, PushError> {
+    let file = File::open(file_path)?;
+    let cid = device.write_ipfs_data(file, true).await?;
+    Ok(cid)
+}
 
 pub async fn push(config: &Config) -> Result<(), PushError> {
     let working_dir = config.working_dir().clone();
@@ -38,16 +48,18 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
 
     // Tell the remote to pin all the objects
     for (path, object) in objects.iter() {
-        if device.remote_stat(object.cid()).await?.is_some() {
+        // See if the cid already exists on the remote
+        if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
             continue;
-        }
-        let cid = device.push(&working_dir.join(path)).await?;
+        };
+        let cid = push_file(&device, &working_dir.join(path)).await?;
         if cid != *object.cid() {
             return Err(PushError::CidMismatch(cid, *object.cid()));
         }
     }
 
-    let new_root_cid = device.push_dor_store(next_base).await?;
+    // Write the dor store against the remote
+    let new_root_cid = device.write_dor_store(next_base, true).await?;
 
     // Push the new root cid to the eth client
     device.update_root_cid(*root_cid, new_root_cid).await?;
@@ -68,6 +80,8 @@ pub enum PushError {
     Device(#[from] DeviceError),
     #[error("cid mismatch: {0} != {1}")]
     CidMismatch(Cid, Cid),
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
     #[error("no changes to push")]
     NoChanges,
     #[error("missmatched root cid: {0} != {1}")]

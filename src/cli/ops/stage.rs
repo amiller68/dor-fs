@@ -1,11 +1,22 @@
+use std::fs::File;
+use std::path::PathBuf;
+
 use cid::Cid;
 
 use super::diff::{diff, DiffError};
 
 use crate::cli::changes::ChangeType;
 use crate::cli::config::{Config, ConfigError};
-use crate::device::DeviceError;
+use crate::device::{Device, DeviceError};
 use crate::types::Object;
+
+/// Stage a file against the local ipfs node
+pub async fn stage_file(device: &Device, file_path: &PathBuf) -> Result<Cid, StageError> {
+    let file = File::open(file_path)?;
+    // Write the dor store against the local instance
+    let cid = device.write_ipfs_data(file, false).await?;
+    Ok(cid)
+}
 
 pub async fn stage(config: &Config) -> Result<(), StageError> {
     let device = config.device()?;
@@ -28,7 +39,7 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
         let working_path = working_dir.join(path);
         if diff_type == &ChangeType::Added || diff_type == &ChangeType::Modified {
             // Add the file to the local ipfs node
-            let added_cid = device.stage(&working_path).await?;
+            let added_cid = stage_file(&device, &working_path).await?;
             // Make sure the cid matches the one in the change_log
             if added_cid != *cid {
                 return Err(StageError::CidMismatch(added_cid, *cid));
@@ -58,7 +69,8 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
 
     update_dor_store.set_previous_root(last_root_cid);
 
-    let update_root_cid = device.hash_dor_store(&update_dor_store).await?;
+    // Hash the dor store against the remote
+    let update_root_cid = device.hash_dor_store(&update_dor_store, false).await?;
 
     change_log.update(&updates, &update_dor_store, &update_root_cid);
 

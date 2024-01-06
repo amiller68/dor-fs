@@ -1,25 +1,31 @@
 use std::convert::TryFrom;
 use std::fmt::Display;
 use std::ops::Deref;
-// use std::path::PathBuf;
+use std::path::PathBuf;
 
-// use cid::Cid;
+use cid::Cid;
 use http::uri::Scheme;
 use ipfs_api_backend_hyper::{IpfsClient as HyperIpfsClient, TryFromUri};
-// use reqwest::Client;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
 pub use ipfs_api_backend_hyper::request::Add as AddRequest;
 pub use ipfs_api_backend_hyper::IpfsApi;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Default cid version to use when adding or hashing datat against the IPFS API
+const DEFAULT_CID_VERSION: u32 = 1;
+/// Default hash function to use when adding or hashing data against the IPFS API
+const DEFAULT_HASH_FUNCTION: &str = "blake3";
+
 /// A connection to an IPFS remote
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IpfsRemote {
     /// Url pointing to an IPFS api
     /// Must include valid authentication if required
     pub api_url: Url,
-    /// Url pointing to an IPFS gateway
+    /// Url pointing to a public IPFS gateway
+    /// Should not require or include authentication
     pub gateway_url: Url,
 }
 
@@ -37,7 +43,6 @@ impl Display for IpfsRemote {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let api_url = self.api_url.clone();
         let gateway_url = self.gateway_url.clone();
-        // Make it look nice, bespoke, and multinelined
         write!(f, "api_url: {}\ngateway_url: {}", api_url, gateway_url)
     }
 }
@@ -59,23 +64,24 @@ impl From<IpfsRemote> for IpfsGateway {
 
 impl IpfsGateway {
     // TODO: this isn't working quite right
-    // pub async fn get(&self, cid: &Cid, path: Option<PathBuf>) -> Result<Vec<u8>, IpfsError> {
-    //     let maybe_port = self.0.port();
-    //     let host_str = match maybe_port {
-    //         Some(port) => format!("{}:{}", self.0.host_str().unwrap(), port),
-    //         None => self.0.host_str().unwrap().to_string(),
-    //     };
-    //     let url = match path {
-    //         Some(p) => Url::parse(&format!("{}.ipfs.{}/{}", cid, host_str, p.display())),
-    //         None => Url::parse(&format!("{}.ipfs.{}", cid, host_str)),
-    //     }?;
-    //     let client = Client::builder().build()?;
-    //     let resp = client.get(url).send().await?;
-    //     let bytes = resp.bytes().await?;
-    //     Ok(bytes.to_vec())
-    // }
+    pub async fn get(&self, cid: &Cid, path: Option<PathBuf>) -> Result<Vec<u8>, IpfsError> {
+        let maybe_port = self.0.port();
+        let host_str = match maybe_port {
+            Some(port) => format!("{}:{}", self.0.host_str().unwrap(), port),
+            None => self.0.host_str().unwrap().to_string(),
+        };
+        let url = match path {
+            Some(p) => Url::parse(&format!("{}.ipfs.{}/{}", cid, host_str, p.display())),
+            None => Url::parse(&format!("{}.ipfs.{}", cid, host_str)),
+        }?;
+        let client = Client::builder().build()?;
+        let resp = client.get(url).send().await?;
+        let bytes = resp.bytes().await?;
+        Ok(bytes.to_vec())
+    }
 }
 
+/// Wrapper around a Hyper IPFS backend
 #[derive(Default)]
 pub struct IpfsClient(HyperIpfsClient);
 
@@ -109,21 +115,21 @@ impl Deref for IpfsClient {
 // TODO: fix this -- wanna get rid of warnings
 
 #[allow(clippy::field_reassign_with_default)]
-pub fn hash_file_request() -> AddRequest<'static> {
+pub fn hash_data_request() -> AddRequest<'static> {
     let mut add = AddRequest::default();
     add.pin = Some(false);
-    add.cid_version = Some(1);
+    add.cid_version = Some(DEFAULT_CID_VERSION);
     add.only_hash = Some(true);
-    add.hash = Some("blake3");
+    add.hash = Some(DEFAULT_HASH_FUNCTION);
     add
 }
 
 #[allow(clippy::field_reassign_with_default)]
-pub fn add_file_request() -> AddRequest<'static> {
+pub fn add_data_request() -> AddRequest<'static> {
     let mut add = AddRequest::default();
     add.pin = Some(true);
-    add.cid_version = Some(1);
-    add.hash = Some("blake3");
+    add.cid_version = Some(DEFAULT_CID_VERSION);
+    add.hash = Some(DEFAULT_HASH_FUNCTION);
     add
 }
 

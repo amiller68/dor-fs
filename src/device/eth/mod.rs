@@ -17,6 +17,7 @@ mod root_cid;
 
 pub use root_cid::{RootCid, RootCidError};
 
+/// Connection to an HTTP RPC API for an EVM-based chain
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthRemote {
     pub rpc_url: Url,
@@ -69,22 +70,25 @@ impl EthClient {
         self.signer.clone()
     }
 
+    // TODO: no result needed
     /// Attach SignerMiddleware to the client
-    pub fn with_signer(mut self, wallet: LocalWallet) -> Result<Self, EthClientError> {
+    pub fn with_signer(mut self, wallet: LocalWallet) -> Self {
         let wallet = wallet.with_chain_id(self.chain_id);
         let signer = SignerMiddleware::new(self.provider.clone(), wallet);
         self.signer = Some(signer);
-        Ok(self)
+        self
     }
 
+    // TODO: no result needed
     /// Attach a Contract to the client
-    pub fn with_contract(mut self, address: Address, abi: Abi) -> Result<Self, EthClientError> {
+    pub fn with_contract(mut self, address: Address, abi: Abi) -> Self {
         let contract = Contract::new(address, abi, Arc::new(self.provider.clone()));
         self.contract = Some(contract);
-        Ok(self)
+        self
     }
 }
 
+// TODO: oof error types
 #[derive(thiserror::Error, Debug)]
 pub enum EthClientError {
     #[error("default error: {0}")]
