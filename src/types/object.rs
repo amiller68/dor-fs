@@ -30,14 +30,14 @@ impl DerefMut for ObjectSet {
 /// - created_at: the time the file was added to the DorFS
 /// - updated_at: the time the file was last updated
 /// - cid: the cid of the file (this should be an IPLD link)
-/// - metadata: the metadata of the file (this should be an IPLD Map)
+/// - metadata: Map from a schema name to a JSON object
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Object {
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 
     cid: Cid,
-    metadata: Value,
+    metadata: BTreeMap<String, Value>,
 }
 
 impl Object {
@@ -46,37 +46,40 @@ impl Object {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             cid,
-            metadata: Value::Null,
+            metadata: BTreeMap::new(),
         }
     }
 
-    pub fn update(&mut self, cid: Cid, maybe_metadata: Option<Value>) {
+    pub fn update(&mut self, cid: Cid) {
         self.cid = cid;
-        if let Some(metadata) = maybe_metadata {
-            self.metadata = metadata;
-        }
         self.updated_at = Utc::now();
     }
 
-    // pub fn created_at(&self) -> &DateTime<Utc> {
-    //     &self.created_at
-    // }
-    // pub fn updated_at(&self) -> &DateTime<Utc> {
-    //     &self.updated_at
-    // }
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
 
     pub fn cid(&self) -> &Cid {
         &self.cid
     }
-    // pub fn metadata(&self) -> &Value {
-    //     &self.metadata
-    // }
+    pub fn metadata(&self) -> &BTreeMap<String, Value> {
+        &self.metadata
+    }
 
-    // pub fn set_updated_at(&mut self, updated_at: DateTime<Utc>) {
-    //     self.updated_at = updated_at;
-    // }
+    pub fn set_updated_at(&mut self, updated_at: DateTime<Utc>) {
+        self.updated_at = updated_at;
+    }
 
-    // pub fn set_metadata(&mut self, metadata: Value) {
-    //     self.metadata = metadata;
-    // }
+    pub fn set_metadata(&mut self, metadata: BTreeMap<String, Value>) {
+        self.metadata = metadata;
+    }
+
+    pub fn tag(&mut self, schema_name: &String, value: &Value) {
+        self.metadata.insert(schema_name.clone(), value.clone());
+        self.updated_at = Utc::now();
+    }
 }

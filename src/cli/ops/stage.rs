@@ -50,7 +50,7 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
                 update_dor_store.insert_object(path.clone(), object.clone());
             } else if diff_type == &ChangeType::Modified {
                 let mut d = update_dor_store.clone();
-                let object = d.update_object(path, added_cid, None);
+                let object = d.update_object(path, added_cid);
                 update_dor_store.insert_object(path.clone(), object.clone());
             }
         }

@@ -18,5 +18,3 @@ cargo run -- device create \
 	--eth-chain-id 31337 \
 	--ipfs-url http://localhost:5001 \
 	--ipfs-gateway-url http://localhost:8080
-
-cargo run -- configure device set --alias dev
