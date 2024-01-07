@@ -30,7 +30,7 @@ pub async fn file_needs_pull(
 
 pub async fn pull_file(device: &Device, cid: &Cid, path: &PathBuf) -> Result<(), PullError> {
     // TODO: replace with gateway read
-    let data = device.read_ipfs_data(cid, true).await?;
+    let data = device.read_ipfs_gateway_data(cid, None).await?;
     let mut object_path = path.clone();
     object_path.pop();
     std::fs::create_dir_all(object_path)?;

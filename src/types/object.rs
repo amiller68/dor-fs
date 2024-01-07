@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
@@ -35,7 +36,6 @@ impl DerefMut for ObjectSet {
 pub struct Object {
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
-
     cid: Cid,
     metadata: BTreeMap<String, Value>,
 }
@@ -66,16 +66,9 @@ impl Object {
     pub fn cid(&self) -> &Cid {
         &self.cid
     }
-    pub fn metadata(&self) -> &BTreeMap<String, Value> {
-        &self.metadata
-    }
 
-    pub fn set_updated_at(&mut self, updated_at: DateTime<Utc>) {
-        self.updated_at = updated_at;
-    }
-
-    pub fn set_metadata(&mut self, metadata: BTreeMap<String, Value>) {
-        self.metadata = metadata;
+    pub fn metadata_entry(&self, schema_name: &String) -> Option<&Value> {
+        self.metadata.get(schema_name)
     }
 
     pub fn tag(&mut self, schema_name: &String, value: &Value) {

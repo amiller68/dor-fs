@@ -66,15 +66,17 @@ impl IpfsGateway {
     // TODO: this isn't working quite right
     pub async fn get(&self, cid: &Cid, path: Option<PathBuf>) -> Result<Vec<u8>, IpfsError> {
         let maybe_port = self.0.port();
+        let scheme = Scheme::try_from(self.0.scheme())?;
         let host_str = match maybe_port {
             Some(port) => format!("{}:{}", self.0.host_str().unwrap(), port),
             None => self.0.host_str().unwrap().to_string(),
         };
         let url = match path {
-            Some(p) => Url::parse(&format!("{}.ipfs.{}/{}", cid, host_str, p.display())),
-            None => Url::parse(&format!("{}.ipfs.{}", cid, host_str)),
+            Some(p) => Url::parse(&format!("{}://{}.ipfs.{}/{}", scheme, cid, host_str, p.display())),
+            None => Url::parse(&format!("{}://{}.ipfs.{}", scheme, cid, host_str)),
         }?;
-        let client = Client::builder().build()?;
+        // TODO: not 100% sure why I need to use trust_dns here, but this works
+        let client = Client::builder().trust_dns(true).build()?;
         let resp = client.get(url).send().await?;
         let bytes = resp.bytes().await?;
         Ok(bytes.to_vec())
