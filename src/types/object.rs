@@ -55,21 +55,21 @@ impl Object {
         self.updated_at = Utc::now();
     }
 
-    pub fn created_at(&self) -> &DateTime<Utc> {
-        &self.created_at
-    }
+    // pub fn created_at(&self) -> &DateTime<Utc> {
+    //     &self.created_at
+    // }
 
-    pub fn updated_at(&self) -> &DateTime<Utc> {
-        &self.updated_at
-    }
+    // pub fn updated_at(&self) -> &DateTime<Utc> {
+    //     &self.updated_at
+    // }
 
     pub fn cid(&self) -> &Cid {
         &self.cid
     }
 
-    pub fn metadata_entry(&self, schema_name: &String) -> Option<&Value> {
-        self.metadata.get(schema_name)
-    }
+    // pub fn metadata_entry(&self, schema_name: &String) -> Option<&Value> {
+    //     self.metadata.get(schema_name)
+    // }
 
     pub fn tag(&mut self, schema_name: &String, value: &Value) {
         self.metadata.insert(schema_name.clone(), value.clone());
