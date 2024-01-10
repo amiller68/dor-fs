@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use clap::{command, Subcommand};
 use ethers::types::Address;
+use serde_json::Value;
 use url::Url;
 
 pub use clap::Parser;
@@ -41,39 +42,18 @@ pub enum Command {
     Stage,
     /// Stat changes
     Stat,
-    /// Schema management. These effect the schema definitions in the dot directory
+    /// Tag an object with one of our schemas. These effect the schema definitions in the dot directory
     /// Changes to schemas will be reflected in the next push
-    Schema {
-        #[clap(subcommand)]
-        subcommand: SchemaSubcommand,
-    },
-    /// Squash and sync changes with the remote
-    Push,
-}
-
-#[derive(Debug, Subcommand, Clone, PartialEq)]
-pub enum SchemaSubcommand {
-    /// Create a new schema
-    Create {
-        #[clap(long, short)]
-        name: String,
-        #[clap(long, short, value_delimiter = ',')]
-        fields: Vec<String>,
-    },
-    /// Remove a schema
-    Remove {
-        #[clap(long, short)]
-        name: String,
-    },
-    /// List all schemas
-    Ls,
-    /// Tag an object with a schema
     Tag {
         #[clap(long, short)]
         name: String,
         #[clap(long, short)]
         path: PathBuf,
+        #[clap(long, short)]
+        value: String
     },
+    /// Squash and sync changes with the remote
+    Push,
 }
 
 // TODO: add ability to manage keystores here

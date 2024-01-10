@@ -1,0 +1,16 @@
+{
+  "name": "krondor-org",
+  "version": "1.0.0",
+  "description": "Simple cms managed blog",
+  "scripts": {
+    "prepare": "rustup override set nightly && rustup target add wasm32-unknown-unknown && cargo install trunk --locked",
+    "dev": "trunk serve",
+    "build": "trunk build --release",
+    "e2e": "cd e2e && yarn && playwright test"
+  },
+  "author": "Al Miller <al@krondor.org>",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.3.5"
+  }
+}

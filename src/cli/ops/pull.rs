@@ -43,7 +43,7 @@ pub async fn pull(config: &Config) -> Result<(), PullError> {
     let on_disk_device = config.on_disk_device()?;
     let alias = on_disk_device.alias();
     let base_root_cid = Config::root_cid(config)?;
-    let base_dor_store = Config::base(config)?;
+    let base_manifest = Config::base(config)?;
     let device = config.device()?;
 
     let root_cid = device.read_root_cid().await?;
@@ -53,19 +53,19 @@ pub async fn pull(config: &Config) -> Result<(), PullError> {
         config.set_root_cid(&root_cid)?;
     }
 
-    let mut dor_store = base_dor_store.clone();
+    let mut manifest = base_manifest.clone();
     if root_cid != Cid::default() {
         tracing::info!("root cid is not set");
-        dor_store = device.read_dor_store(&root_cid, true).await?;
+        manifest = device.read_manifest(&root_cid, true).await?;
     }
 
-    if dor_store == base_dor_store {
+    if manifest == base_manifest {
         tracing::info!("dor store is up to date");
     } else {
-        config.set_base(&dor_store)?;
+        config.set_base(&manifest)?;
     }
 
-    let objects = dor_store.objects();
+    let objects = manifest.objects();
 
     for (path, object) in objects.iter() {
         let working_path = config.working_dir().join(path);
@@ -77,7 +77,7 @@ pub async fn pull(config: &Config) -> Result<(), PullError> {
         pull_file(&device, object.cid(), &working_path).await?;
     }
 
-    let change_log = ChangeLog::new(alias, &dor_store, &root_cid);
+    let change_log = ChangeLog::new(alias, &manifest, &root_cid);
     config.set_change_log(change_log)?;
 
     Ok(())

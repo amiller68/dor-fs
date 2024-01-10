@@ -1,7 +1,0 @@
-# TODO: this should be populated with where
-# my dor-store is located
-### Web Config
-
-APP_CONTRACT_ADDRESS=0x00
-APP_CHAIN_ID=0x00
-APP_IPFS_GATEWAY=https://ipfs.io/ipfs/

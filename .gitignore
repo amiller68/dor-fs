@@ -3,5 +3,6 @@ pkg/
 lib/
 cache/
 out/
-playground/
 .gas-snapshot
+web.config.dev
+src/wasm/env.rs

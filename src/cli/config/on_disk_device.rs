@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::device::{
     Device, EthClient, EthClientError, EthRemote, IpfsClient, IpfsError, IpfsGateway, IpfsRemote,
 };
-use crate::types::DorStore;
+use crate::types::Manifest;
 
 use super::{
     xdg_config_home, ConfigError, BASE_DOR_STORE_NAME, DEVICE_CONFIG_NAME, DEVICE_KEYSTORE_NAME,
@@ -68,7 +68,7 @@ impl OnDiskDevice {
         };
 
         let cid = Cid::default();
-        let base = DorStore::default();
+        let base = Manifest::default();
 
         Self::set_root_cid(alias.clone(), &cid)?;
         Self::set_base(alias.clone(), &base)?;
@@ -163,7 +163,7 @@ impl OnDiskDevice {
     }
 
     /// Read the base dor store metadata from disk for the device
-    pub fn base(alias: String) -> Result<DorStore, ConfigError> {
+    pub fn base(alias: String) -> Result<Manifest, ConfigError> {
         let device_path = device_path(alias.clone())?;
         let base_path = device_path.join(BASE_DOR_STORE_NAME);
         let base_str = std::fs::read_to_string(base_path)?;
@@ -172,7 +172,7 @@ impl OnDiskDevice {
     }
 
     /// Set the base dor store metadata for the device
-    pub fn set_base(alias: String, base: &DorStore) -> Result<(), ConfigError> {
+    pub fn set_base(alias: String, base: &Manifest) -> Result<(), ConfigError> {
         let device_path = device_path(alias.clone())?;
         let base_path = device_path.join(BASE_DOR_STORE_NAME);
         let base_str = serde_json::to_string(&base)?;

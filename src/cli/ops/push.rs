@@ -5,7 +5,7 @@ use cid::Cid;
 
 use crate::cli::config::{Config, ConfigError};
 use crate::device::{Device, DeviceError};
-use crate::types::DorStore;
+use crate::types::Manifest;
 
 /// Push a file to the remote ipfs node
 pub async fn push_file(device: &Device, file_path: &PathBuf) -> Result<Cid, PushError> {
@@ -59,7 +59,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
     }
 
     // Write the dor store against the remote
-    let new_root_cid = device.write_dor_store(next_base, true).await?;
+    let new_root_cid = device.write_manifest(next_base, true).await?;
 
     // Push the new root cid to the eth client
     device.update_root_cid(*root_cid, new_root_cid).await?;
@@ -87,5 +87,5 @@ pub enum PushError {
     #[error("missmatched root cid: {0} != {1}")]
     MissmatchedRootCid(Cid, Cid),
     #[error("missmatched base: {0:?} != {1:?}")]
-    MissmatchedBase(DorStore, DorStore),
+    MissmatchedBase(Manifest, Manifest),
 }

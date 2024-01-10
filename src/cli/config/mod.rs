@@ -8,7 +8,7 @@ use fs_tree::FsTree;
 
 use crate::cli::changes::ChangeLog;
 use crate::device::{Device, EthRemote, IpfsRemote};
-use crate::types::DorStore;
+use crate::types::Manifest;
 
 mod on_disk_default;
 pub mod on_disk_device;
@@ -21,7 +21,7 @@ use super::args::Args;
 // Cli Configuration Constants
 
 // path to application data on disk
-const XDG_PATH: &str = "~/.config/dor-store";
+const XDG_PATH: &str = "~/.config/krondor-cms";
 // name to lookup on disk defaults under
 pub const DEFAULT_CONFIG_NAME: &str = "default.json";
 // name to lookup on disk keystore under a given device alias
@@ -184,13 +184,13 @@ impl Config {
         OnDiskDevice::set_root_cid(device_alias, cid)
     }
 
-    pub fn base(&self) -> Result<DorStore, ConfigError> {
+    pub fn base(&self) -> Result<Manifest, ConfigError> {
         let device_alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
         let base = OnDiskDevice::base(device_alias)?;
         Ok(base)
     }
 
-    pub fn set_base(&self, base: &DorStore) -> Result<(), ConfigError> {
+    pub fn set_base(&self, base: &Manifest) -> Result<(), ConfigError> {
         let device_alias = self.device_alias.clone().ok_or(ConfigError::NoSetDevice)?;
         OnDiskDevice::set_base(device_alias, base)
     }
