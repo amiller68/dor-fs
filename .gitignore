@@ -2,6 +2,7 @@ target/
 pkg/
 lib/
 cache/
+dist/
 out/
 .gas-snapshot
 web.config.dev
