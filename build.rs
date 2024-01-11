@@ -52,7 +52,6 @@ fn web() {
     }
 }
 
-
 fn report_build_profile() {
     println!(
         "cargo:rustc-env=BUILD_PROFILE={}",
@@ -92,10 +91,10 @@ fn report_repository_version() {
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     // if cfg!(target_arch = "wasm32") {
-        web();
+    web();
     // }
-    
+
     report_build_profile();
     report_enabled_features();
-    report_repository_version(); 
+    report_repository_version();
 }

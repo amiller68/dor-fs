@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::{command, Subcommand};
 use ethers::types::Address;
-use serde_json::Value;
+
 use url::Url;
 
 pub use clap::Parser;
@@ -50,7 +50,7 @@ pub enum Command {
         #[clap(long, short)]
         path: PathBuf,
         #[clap(long, short)]
-        value: String
+        value: String,
     },
     /// Squash and sync changes with the remote
     Push,

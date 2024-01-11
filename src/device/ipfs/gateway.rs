@@ -5,7 +5,7 @@ use http::uri::Scheme;
 use reqwest::Client;
 use url::Url;
 
-use super::{IpfsRemote, IpfsError};
+use super::{IpfsError, IpfsRemote};
 
 /// A wrapper around a gateway url
 pub struct IpfsGateway(Url);
@@ -29,9 +29,10 @@ impl From<Url> for IpfsGateway {
 }
 
 impl IpfsGateway {
+    #[allow(dead_code)]
     pub fn new(url: Url) -> Self {
         Self(url)
-    }    
+    }
 
     // TODO: this isn't working quite right
     pub async fn get(&self, cid: &Cid, path: Option<PathBuf>) -> Result<Vec<u8>, IpfsError> {
@@ -42,7 +43,13 @@ impl IpfsGateway {
             None => self.0.host_str().unwrap().to_string(),
         };
         let url = match path {
-            Some(p) => Url::parse(&format!("{}://{}.ipfs.{}/{}", scheme, cid, host_str, p.display())),
+            Some(p) => Url::parse(&format!(
+                "{}://{}.ipfs.{}/{}",
+                scheme,
+                cid,
+                host_str,
+                p.display()
+            )),
             None => Url::parse(&format!("{}://{}.ipfs.{}", scheme, cid, host_str)),
         }?;
         // TODO: not 100% sure why I need to use trust_dns here, but this works

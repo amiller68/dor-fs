@@ -1,7 +1,10 @@
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
+use serde_json::Value;
+
 use super::{Page, PageContext};
+use crate::wasm::components::StaticMd;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct IndexPage(PageContext);
@@ -21,10 +24,20 @@ impl Page for IndexPage {
 impl IntoView for IndexPage {
     fn into_view(self) -> View {
         view! {
-            <div>
-                <h1>Krondor A.K.A Al Miller</h1>
-                <p>Welcome to my little corner of the web!</p>
-            </div>
-        }.into_view()
+            <StaticMd name="index"/>
+            <a href="https://github.com/amiller68" class="icon">
+                <img src="/static/icons/github.svg" alt="Github" class="icon"/>
+            </a>
+            <a href="https://twitter.com/lord_krondor" class="icon">
+                <img src="/static/icons/twitter.svg" alt="Twitter" class="icon"/>
+            </a>
+            <a href="mailto:al@krondor.org" class="icon">
+                <img src="/static/icons/email.svg" alt="Email" class="icon"/>
+            </a>
+            <a href="tg://resolve?domain=lord_krondor" class="icon">
+                <img src="/static/icons/telegram.svg" alt="Telegram" class="icon"/>
+            </a>
+        }
+        .into_view()
     }
 }

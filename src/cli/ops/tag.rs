@@ -1,28 +1,30 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
 use crate::device::DeviceError;
-use crate::types::{Schema, SchemaError, Writing, Audio, Visual};
+use crate::types::{Audio, Schema, SchemaError, Visual, Writing};
 
 use crate::cli::config::{Config, ConfigError};
 
 // TODO: this whole tagging system is dissapointing. Look at all that bloat!
 //  I either need to rethink this, or learn more about macros
 
-fn input_tag<S>(path: &PathBuf, value: &String) -> Result<Value, TagError>
-    where S: Schema
+fn input_tag<S>(path: &Path, value: &str) -> Result<Value, TagError>
+where
+    S: Schema,
 {
+    let path = path.to_path_buf();
     let extension = match path.extension() {
         Some(ext) => ext,
-        None => return Err(TagError::NoExtension)
+        None => return Err(TagError::NoExtension),
     };
     let extension_str = match extension.to_str() {
         Some(ext) => ext,
-        None => return Err(TagError::NoExtension)
+        None => return Err(TagError::NoExtension),
     };
     if !S::valid_extensions().contains(&extension_str) {
-        return Err(TagError::UnsupportedFileType)
+        return Err(TagError::UnsupportedFileType);
     }
     let value: Value = serde_json::from_str(value)?;
     let fields = S::fields();
@@ -35,13 +37,7 @@ fn input_tag<S>(path: &PathBuf, value: &String) -> Result<Value, TagError>
     Ok(schema.into_schema_value())
 }
 
-
-pub async fn tag(
-    config: &Config,
-    name: &String,
-    path: &PathBuf,
-    value: &String
-) -> Result<(), TagError> {
+pub async fn tag(config: &Config, name: &str, path: &PathBuf, value: &str) -> Result<(), TagError> {
     // load the manifest schema
     let device = config.device()?;
     let mut change_log = config.change_log()?;
@@ -49,20 +45,14 @@ pub async fn tag(
     let mut manifest = base_manifest.clone();
     let object = match manifest.get_object_mut(path) {
         Some(o) => o,
-        None => return Err(TagError::ObjectDoesNotExist(path.clone()))
+        None => return Err(TagError::ObjectDoesNotExist(path.clone())),
     };
 
-    let value = match name.as_str() {
-        "writing" => {
-            input_tag::<Writing>(path, value)
-        },
-        "audio" => {
-            input_tag::<Audio>(path, value)
-        }
-        "visual" => {
-            input_tag::<Visual>(path, value)
-        },
-        val => return Err(TagError::SchemaDoesNotExist(val.to_string()))
+    let value = match name {
+        "writing" => input_tag::<Writing>(path, value),
+        "audio" => input_tag::<Audio>(path, value),
+        "visual" => input_tag::<Visual>(path, value),
+        val => return Err(TagError::SchemaDoesNotExist(val.to_string())),
     }?;
 
     object.set_metdata(value);

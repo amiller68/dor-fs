@@ -10,9 +10,9 @@ use futures_util::stream::TryStreamExt;
 mod eth;
 mod ipfs;
 
-pub use eth::{EthClient, EthClientError, EthRemote, RootCid};
 #[cfg(target_arch = "wasm32")]
 pub use eth::RootCidError;
+pub use eth::{EthClient, EthClientError, EthRemote, RootCid};
 #[cfg(not(target_arch = "wasm32"))]
 pub use ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsRemote};
 pub use ipfs::{IpfsError, IpfsGateway};

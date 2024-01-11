@@ -1,13 +1,12 @@
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use cid::Cid;
 use serde::{Deserialize, Serialize};
 
 use super::object::Object;
-use super::schema::Schema;
 
-/// Manifest: describes the state of content 
+/// Manifest: describes the state of content
 /// - objects: a set of Objects that comprise website content
 /// - previous_root: a cid pointing back to the previous version of the manifest
 /// - version: version information on the crate
@@ -27,8 +26,16 @@ impl Manifest {
         &self.objects
     }
 
-    pub fn insert_object(&mut self, path: &PathBuf, object: &Object) {
-        self.objects.insert(path.clone(), object.clone());
+    #[allow(dead_code)]
+    pub fn object_by_cid(&self, cid: &Cid) -> Option<(&PathBuf, &Object)> {
+        self.objects
+            .iter()
+            .find(|(_, object)| object.cid() == cid)
+            .map(|(path, object)| (path, object))
+    }
+
+    pub fn insert_object(&mut self, path: &Path, object: &Object) {
+        self.objects.insert(path.to_path_buf(), object.clone());
     }
 
     pub fn remove_object(&mut self, path: &PathBuf) {
@@ -44,7 +51,6 @@ impl Manifest {
     //     object.update(cid);
     //     let mut objects = self.objects();
     //     objects.insert(path.clone(), object.clone());
-
 
     //     // self.insert_object(path, object)
     // }

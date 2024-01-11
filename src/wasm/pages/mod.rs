@@ -1,21 +1,31 @@
-use leptos::*;
-use leptos_router::*;
-use leptos_router::Router;
-use serde::{Deserialize, Serialize};
 use cid::Cid;
+use leptos::*;
+use leptos_router::Router;
+use leptos_router::*;
+use serde::{Deserialize, Serialize};
 
 use crate::types::Manifest;
-use crate::wasm::env::{APP_NAME, APP_VERSION};
-use crate::wasm::components::InternalLink;
 use crate::wasm::compat::{WasmDevice, WasmDeviceError};
+use crate::wasm::components::InternalLink;
+use crate::wasm::env::{APP_NAME, APP_VERSION};
 
 // This router is an attempt to make SPAs easy
 // Register and use pages here
 
+mod about;
+mod audio;
 mod index;
+mod object;
+mod visual;
+mod writing;
 // mod items;
 
+use about::AboutPage;
+use audio::AudioPage;
 use index::IndexPage;
+use object::ObjectPage;
+use visual::VisualPage;
+use writing::WritingPage;
 // use items::ItemsPage;
 
 /// A Shared page context to pass to all pages within our internal router
@@ -43,6 +53,11 @@ impl IntoView for PageContext {
         let page: Box<dyn Page> = match self.route() {
             Some(route) => match route.as_str() {
                 // "items" => ItemsPage::from_ctx(self),
+                "about" => AboutPage::from_ctx(self),
+                "object" => ObjectPage::from_ctx(self),
+                "writing" => WritingPage::from_ctx(self),
+                "audio" => AudioPage::from_ctx(self),
+                "visual" => VisualPage::from_ctx(self),
                 _ => IndexPage::from_ctx(self),
             },
             _ => IndexPage::from_ctx(self),
@@ -70,6 +85,10 @@ pub fn InternalRouter() -> impl IntoView {
             <nav id="drawer">
                 <ul>
                     <li><InternalLink query="".to_string()  msg="Home".to_string()/></li>
+                    <li><InternalLink query="?route=about".to_string()  msg="About".to_string()/></li>
+                    <li><InternalLink query="?route=writing".to_string()  msg="Writing".to_string()/></li>
+                    <li><InternalLink query="?route=audio".to_string()  msg="Audio".to_string()/></li>
+                    <li><InternalLink query="?route=visual".to_string()  msg="Visual".to_string()/></li>
                 </ul>
             </nav>
             <main id="page-content">
@@ -92,7 +111,10 @@ fn PageRoute() -> impl IntoView {
             let device = WasmDevice::new().expect("failed to init device");
             let route = route.get();
             let query = query.get();
-            let root_cid = device.read_root_cid().await.expect("failed to read root cid");
+            let root_cid = device
+                .read_root_cid()
+                .await
+                .expect("failed to read root cid");
             if root_cid == Cid::default() {
                 return PageContext {
                     manifest: None,
@@ -118,7 +140,7 @@ fn PageRoute() -> impl IntoView {
     view! {
         <div>
             {move || match ctx.get() {
-                None => view! { Loading... }.into_view(), 
+                None => view! { Loading... }.into_view(),
                 Some(c) => c.into_view()
             }}
         </div>

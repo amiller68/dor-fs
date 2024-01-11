@@ -11,7 +11,7 @@ pub use crate::device::{EthClient, EthClientError, EthRemote, RootCid, RootCidEr
 pub use crate::device::{IpfsError, IpfsGateway};
 use crate::types::Manifest;
 
-use crate::wasm::env::{APP_CONTRACT_ADDRESS, APP_CHAIN_ID, APP_IPFS_GATEWAY_URL, APP_RPC_URL};
+use crate::wasm::env::{APP_CHAIN_ID, APP_CONTRACT_ADDRESS, APP_IPFS_GATEWAY_URL, APP_RPC_URL};
 
 /// One stop shop for reading Store data from IPFS and Ethereum
 pub struct WasmDevice {
@@ -27,7 +27,8 @@ pub struct WasmDevice {
 /// One stop shop for coordinating interactions with a given remote configuration
 impl WasmDevice {
     pub fn new() -> Result<Self, WasmDeviceError> {
-        let contract_address = Address::from_str(APP_CONTRACT_ADDRESS).expect("invalid contract address");
+        let contract_address =
+            Address::from_str(APP_CONTRACT_ADDRESS).expect("invalid contract address");
         let chain_id = u16::from_str(APP_CHAIN_ID)?;
         let ipfs_gateway_url = APP_IPFS_GATEWAY_URL;
         let ipfs_gateway = IpfsGateway::new(ipfs_gateway_url.parse()?);
@@ -42,7 +43,7 @@ impl WasmDevice {
             ipfs_gateway,
         })
     }
-    
+
     /* Dor Store Helpers */
 
     /// Read a Block by its Cid as a Manifest from Ipfs

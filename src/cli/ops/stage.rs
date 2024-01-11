@@ -47,7 +47,7 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
             // Insert the file into the Manifest
             if diff_type == &ChangeType::Added {
                 let object = Object::new(added_cid);
-                update_manifest.insert_object(&path, &object);
+                update_manifest.insert_object(path, &object);
             } else if diff_type == &ChangeType::Modified {
                 let object = update_manifest.get_object_mut(path).unwrap();
                 object.update(added_cid);

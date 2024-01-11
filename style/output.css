@@ -670,6 +670,10 @@ html,body {
   font-weight: 700;
 }
 
+.filter {
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
 /* Gloabl Styles */
 
 /* TODO: I ripped off this drawer style to get something working quickly.
@@ -745,9 +749,9 @@ header {
 #drawer {
   position: fixed;
   top: 0;
-  left:-300px;
+  left:-150px;
   height: 100%;
-  width: 300px;
+  width: 150px;
   overflow-x: hidden;
   overflow-y: scroll;
   padding: 20px;
@@ -758,13 +762,13 @@ header {
 
 #drawer-toggle:checked ~ #drawer-toggle-label {
   height: 100%;
-  width: calc(100% - 300px);
+  width: calc(100% - 150px);
   background: rgba(255,255,255,.8);
 }
 
 #drawer-toggle:checked ~ #drawer-toggle-label, 
 #drawer-toggle:checked ~ header {
-  left: 300px;
+  left: 150px;
 }
 
 #drawer-toggle:checked ~ #drawer {
@@ -772,7 +776,7 @@ header {
 }
 
 #drawer-toggle:checked ~ #page-content {
-  margin-left: 300px;
+  margin-left: 150px;
 }
 
 /* Menu item styles */

@@ -6,7 +6,7 @@ use ipfs_api_backend_hyper::{IpfsClient as HyperIpfsClient, TryFromUri};
 
 pub use ipfs_api_backend_hyper::request::Add as AddRequest;
 
-use super::{IpfsRemote, IpfsError};
+use super::{IpfsError, IpfsRemote};
 
 /// Default cid version to use when adding or hashing datat against the IPFS API
 const DEFAULT_CID_VERSION: u32 = 1;

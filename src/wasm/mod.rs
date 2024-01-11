@@ -1,8 +1,8 @@
 mod app;
-mod components;
-mod pages;
-mod env;
-mod utils;
 mod compat;
+mod components;
+mod env;
+mod pages;
+mod utils;
 
 pub use app::App;

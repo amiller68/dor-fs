@@ -4,6 +4,7 @@ mod types;
 #[cfg(not(target_arch = "wasm32"))]
 mod cli;
 
+#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 mod wasm;
 

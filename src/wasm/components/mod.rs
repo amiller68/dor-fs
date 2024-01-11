@@ -1,5 +1,7 @@
-mod internal_link;
-mod item_table;
+mod link;
+mod object_table;
+mod static_md;
 
-pub use internal_link::InternalLink;
-pub use item_table::{ItemRow, ItemRowTable};
+pub use link::{InternalLink, ObjectLink};
+pub use object_table::{ObjectRow, ObjectRowTable};
+pub use static_md::StaticMd;

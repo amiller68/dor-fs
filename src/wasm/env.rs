@@ -3,7 +3,8 @@
 #![allow(dead_code)]
 
 pub const APP_VERSION: &str = "0.1.0";
-pub const APP_CONTRACT_ADDRESS: &str = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+pub const APP_NAME: &str = "Krondor CMS";
+pub const APP_CONTRACT_ADDRESS: &str = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed";
 pub const APP_CHAIN_ID: &str = "31337";
 pub const APP_RPC_URL: &str = "http://localhost:8545";
 pub const APP_IPFS_GATEWAY_URL: &str = "http://localhost:8080";

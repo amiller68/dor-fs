@@ -8,9 +8,9 @@ mod client;
 mod gateway;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use ipfs_api_backend_hyper::IpfsApi;
+pub use client::{add_data_request, hash_data_request, IpfsClient, IpfsClientError};
 #[cfg(not(target_arch = "wasm32"))]
-pub use client::{IpfsClient, IpfsClientError, add_data_request, hash_data_request};
+pub use ipfs_api_backend_hyper::IpfsApi;
 
 pub use gateway::IpfsGateway;
 

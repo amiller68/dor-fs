@@ -8,8 +8,8 @@ use serde_json::Value;
 /// - created_at: the time the file was added to the DorFS
 /// - updated_at: the time the file was last updated
 /// - cid: the cid of the file (this should be an IPLD link)
-/// - metadata: This can be any piece of Json metadata you want 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+/// - metadata: This can be any piece of Json metadata you want
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct Object {
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
@@ -23,7 +23,7 @@ impl Object {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             cid,
-            metadata: Value::Null
+            metadata: Value::Null,
         }
     }
 
@@ -32,16 +32,23 @@ impl Object {
         self.updated_at = Utc::now();
     }
 
-    // pub fn created_at(&self) -> &DateTime<Utc> {
-    //     &self.created_at
-    // }
+    #[allow(dead_code)]
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
 
-    // pub fn updated_at(&self) -> &DateTime<Utc> {
-    //     &self.updated_at
-    // }
+    #[allow(dead_code)]
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
 
     pub fn cid(&self) -> &Cid {
         &self.cid
+    }
+
+    #[allow(dead_code)]
+    pub fn metadata(&self) -> &Value {
+        &self.metadata
     }
 
     pub fn set_metdata(&mut self, value: Value) {

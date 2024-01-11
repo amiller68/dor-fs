@@ -1,8 +1,7 @@
 mod manifest;
 mod object;
-mod schema;
-
+pub mod schema;
 
 pub use manifest::Manifest;
 pub use object::Object;
-pub use schema::{Schema, SchemaError, WritingGenre, Writing, Audio, Visual};
+pub use schema::{Audio, Schema, SchemaError, Visual, Writing};

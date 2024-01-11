@@ -80,9 +80,9 @@ header {
 #drawer { 
   position: fixed; 
   top: 0; 
-  left:-300px; 
+  left:-150px; 
   height: 100%; 
-  width: 300px; 
+  width: 150px; 
   overflow-x: hidden; 
   overflow-y: scroll; 
   padding: 20px; 
@@ -93,13 +93,13 @@ header {
 /* checked styles (menu open state) */ 
 #drawer-toggle:checked ~ #drawer-toggle-label { 
   height: 100%; 
-  width: calc(100% - 300px); 
+  width: calc(100% - 150px); 
   background: rgba(255,255,255,.8); 
 } 
 
 #drawer-toggle:checked ~ #drawer-toggle-label, 
 #drawer-toggle:checked ~ header { 
-  left: 300px; 
+  left: 150px; 
 } 
 
 #drawer-toggle:checked ~ #drawer { 
@@ -107,7 +107,7 @@ header {
 } 
 
 #drawer-toggle:checked ~ #page-content { 
-  margin-left: 300px; 
+  margin-left: 150px; 
 }
 
 /* Menu item styles */ 
