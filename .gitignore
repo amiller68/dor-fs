@@ -8,3 +8,4 @@ playground/.fs
 .gas-snapshot
 web.config.dev
 src/wasm/env.rs
+node_modules/
