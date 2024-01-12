@@ -36,7 +36,7 @@ impl IntoView for ObjectPage {
                 return view! {
                     <div>
                         <p>
-                            Oh no! It looks like something went wrong loading this page!
+                            "Oh no! It looks like something went wrong loading this page!"
                         </p>
                     </div>
                 }
@@ -125,6 +125,7 @@ pub async fn render_object_view(
     object: &Object,
 ) -> impl IntoView {
     let metadata = object.metadata();
+    let date = object.updated_at().date_naive().to_string();
     let schema = Schemas::try_from(metadata.clone())
         .map_err(|_| {
             // If this is not an object we know how to render, just
@@ -144,17 +145,34 @@ pub async fn render_object_view(
             let html = object_markdown_to_html(manifest, path).await;
             view! {
                 <div>
-                    <h1>{writing.title}</h1>
-                    <div class="prose max-w-none" inner_html=html/>
+                    <h1 class="text-3xl font-bold italic bg-gray-800 p-2">
+                        {writing.title}
+                        <div class="text-sm font-normal text-gray-200">
+                            <p>Last updated: {date}</p>
+                            <p>{writing.description}</p>
+                        </div>
+                    </h1>
+                    <div class="prose max-w-none p-2 md" inner_html=html/>
                 </div>
             }
         }
         Schemas::Visual(visual) => {
             let url = object_url(object);
             let html = format!(r#"<img src="{url}"/>"#, url = url);
-            view! { <div class="prose max-w-none" inner_html=html/> }
+            view! {
+                <div>
+                    <h1 class="text-3xl font-bold italic bg-gray-800 p-2">
+                        {visual.title}
+                        <div class="text-sm font-normal text-gray-200">
+                            <p>Last updated: {date}</p>
+                            <p>{visual.location}, {visual.medium}</p>
+                        </div>
+                    </h1>
+                    <div class="prose max-w-none p-10" inner_html=html/>
+                </div>
+            }
         }
-        Schemas::Audio(audio) => {
+        Schemas::Audio(audio_obj) => {
             let url = object_url(object);
             let audio_ref: NodeRef<html::Audio> = create_node_ref::<html::Audio>();
             let button_ref: NodeRef<html::Button> = create_node_ref::<html::Button>();
@@ -197,23 +215,32 @@ pub async fn render_object_view(
             });
 
             view! {
-                <div class="flex flex-col items-center justify-center space-y-4">
-                    <audio
-                        class="hidden"
-                        node_ref=audio_ref
-                        src={url}
-                    />
-                    <div class="flex items-center space-x-2">
-                        <button
-                            class="bg-teal-500 hover:bg-teal-600 font-bold py-2 px-4 rounded-full"
-                            node_ref=button_ref
+                <div>
+                    <h1 class="text-3xl font-bold italic bg-gray-800 p-2">
+                        {audio_obj.title}
+                        <div class="text-sm font-normal text-gray-200">
+                            <p>Last updated: {date}</p>
+                            <p>{audio_obj.project.to_string()}</p>
+                        </div>
+                    </h1>
+                    <div class="flex flex-col items-center justify-center space-y-4">
+                        <audio
+                            class="hidden"
+                            node_ref=audio_ref
+                            src={url}
+                        />
+                        <div class="flex items-center space-x-2">
+                            <button
+                                class="bg-gray-500 hover:bg-gray-600 font-bold py-2 px-4 rounded-full"
+                                node_ref=button_ref
+                            />
+                        </div>
+                        <input
+                            type="range"
+                            class="w-full h-2 bg-gray-500 rounded-lg appearance-none cursor-pointer"
+                            node_ref=slider_ref
                         />
                     </div>
-                    <input
-                        type="range"
-                        class="w-full h-2 bg-teal-500 rounded-lg appearance-none cursor-pointer"
-                        node_ref=slider_ref
-                    />
                 </div>
             }
         }

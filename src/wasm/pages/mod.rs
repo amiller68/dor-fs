@@ -79,21 +79,21 @@ pub trait Page: Send + Sync {
 pub fn InternalRouter() -> impl IntoView {
     view! {
         <Router>
-            <input type="checkbox" id="drawer-toggle" name="drawer-toggle"/>
-            <label for="drawer-toggle" id="drawer-toggle-label"></label>
-            <header>{APP_NAME}</header>
-            <nav id="drawer">
-                <ul>
-                    <li><InternalLink query="".to_string()  msg="Home".to_string()/></li>
-                    <li><InternalLink query="?route=about".to_string()  msg="About".to_string()/></li>
-                    <li><InternalLink query="?route=writing".to_string()  msg="Writing".to_string()/></li>
-                    <li><InternalLink query="?route=audio".to_string()  msg="Audio".to_string()/></li>
-                    <li><InternalLink query="?route=visual".to_string()  msg="Visual".to_string()/></li>
-                </ul>
-            </nav>
-            <main id="page-content">
-                <PageRoute/>
-            </main>
+                <input type="checkbox" id="drawer-toggle" name="drawer-toggle"/>
+                <label for="drawer-toggle" id="drawer-toggle-label"></label>
+                <header>{APP_NAME}</header>
+                <main>
+                    <PageRoute/>
+                </main>
+                <nav id="drawer">
+                    <ul>
+                        <li><InternalLink query="".to_string()  msg="Home".to_string()/></li>
+                        <li><InternalLink query="?route=about".to_string()  msg="About".to_string()/></li>
+                        <li><InternalLink query="?route=writing".to_string()  msg="Writing".to_string()/></li>
+                        <li><InternalLink query="?route=audio".to_string()  msg="Audio".to_string()/></li>
+                        <li><InternalLink query="?route=visual".to_string()  msg="Visual".to_string()/></li>
+                    </ul>
+                </nav>
         </Router>
     }
 }

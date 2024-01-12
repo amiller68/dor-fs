@@ -4,7 +4,8 @@ mod types;
 #[cfg(not(target_arch = "wasm32"))]
 mod cli;
 
-#[allow(dead_code)]
+// TODO: massive cleanup and separation of wasm and native rust
+#[allow(dead_code, unused_imports, unused_methods, unused_variables)]
 #[cfg(target_arch = "wasm32")]
 mod wasm;
 

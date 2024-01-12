@@ -23,7 +23,7 @@ impl Display for AudioProject {
             f,
             "{}",
             match self {
-                AP::MicTest => "mic_test",
+                AP::MicTest => "Mic Test",
             }
         )
     }
@@ -33,7 +33,7 @@ impl TryFrom<&str> for AudioProject {
     type Error = SchemaError;
 
     fn try_from(val: &str) -> Result<Self, SchemaError> {
-        let variant = match val {
+        let variant = match val.to_lowercase().as_str().replace(' ', "_").as_str() {
             "mic_test" => Self::MicTest,
             _ => {
                 return Err(SchemaError::InvalidField(

@@ -31,7 +31,6 @@ impl Manifest {
         self.objects
             .iter()
             .find(|(_, object)| object.cid() == cid)
-            .map(|(path, object)| (path, object))
     }
 
     pub fn insert_object(&mut self, path: &Path, object: &Object) {

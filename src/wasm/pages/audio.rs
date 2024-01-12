@@ -33,28 +33,34 @@ impl IntoView for AudioPage {
         let items: leptos::RwSignal<Vec<AudioRow>> =
             create_rw_signal(match self.ctx().manifest() {
                 // Filter for object with metadata that we can contruct Writng from
-                Some(manifest) => manifest
-                    .objects()
-                    .iter()
-                    .filter(|(path, object)| {
-                        let metadata = object.metadata();
-                        match Audio::try_from(metadata.clone()) {
-                            Ok(_) => true,
-                            Err(_) => false,
-                        }
-                    })
-                    .map(|(path, object)| object.into())
-                    .collect(),
+                Some(manifest) => {
+                    let mut audio = manifest
+                        .objects()
+                        .iter()
+                        .filter(|(path, object)| {
+                            let metadata = object.metadata();
+                            match Audio::try_from(metadata.clone()) {
+                                Ok(_) => true,
+                                Err(_) => false,
+                            }
+                        })
+                        .map(|(path, object)| object.into())
+                        .collect::<Vec<AudioRow>>();
+                    audio.sort_by(|a, b| b.date.cmp(&a.date));
+                    audio
+                }
                 None => Vec::new(),
             });
         view! {
             <div>
-                <h1>
+                <h1 class="text-3xl font-bold italic bg-gray-800 p-2">
                     Audio
+                    <div class="text-sm font-normal text-gray-200">
+                        <p>
+                            "I've sung and played music for years, and have recently started recording myself more. Here's a few examples of work I've done."
+                        </p>
+                    </div>
                 </h1>
-                <p>
-                    "I've sung and played music for years, and have recently started recording myself more. Here's a few examples:"
-                </p>
                 <AudioRowTable items=items/>
             </div>
         }
@@ -66,8 +72,11 @@ impl IntoView for AudioPage {
 pub struct AudioRow {
     #[table(key, skip)]
     id: Cid,
+    #[table(head_class = "p-2", cell_class = "p-2")]
     title: ObjectLink,
+    #[table(head_class = "p-2", cell_class = "p-2")]
     project: String,
+    #[table(head_class = "p-2", cell_class = "p-2")]
     date: NaiveDate,
 }
 

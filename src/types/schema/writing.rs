@@ -19,10 +19,10 @@ impl Display for WritingGenre {
             f,
             "{}",
             match self {
-                WG::Blog => "blog".to_string(),
-                WG::Poetry => "poetry".to_string(),
-                WG::Fiction => "fiction".to_string(),
-                WG::Essay => "essay".to_string(),
+                WG::Blog => "Blog".to_string(),
+                WG::Poetry => "Poetry".to_string(),
+                WG::Fiction => "Fiction".to_string(),
+                WG::Essay => "Essay".to_string(),
             }
         )
     }
@@ -32,7 +32,7 @@ impl TryFrom<&str> for WritingGenre {
     type Error = SchemaError;
 
     fn try_from(val: &str) -> Result<Self, SchemaError> {
-        let variant = match val {
+        let variant = match val.to_lowercase().as_str() {
             "blog" => Self::Blog,
             "poetry" => Self::Poetry,
             "fiction" => Self::Fiction,

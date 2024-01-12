@@ -31,7 +31,7 @@ cargo run -- --dir playground tag --name writing --path hello_world.md --value '
 cargo run -- --dir playground tag --name visual  --path petting_turtles.jpg --value '{"title": "Draw me, Naked, Petting the Turtles", "location": "New York", "medium": "blue ink on lined paper"}'
 cargo run -- --dir playground --admin-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 push
 
-echo 'APP_NAME="Krondor CMS"' > web.config.dev
+echo 'APP_NAME="krondor.Org"' > web.config.dev
 echo 'APP_CONTRACT_ADDRESS='${ADDRESS} >> web.config.dev
 echo 'APP_CHAIN_ID=31337' >> web.config.dev
 echo 'APP_RPC_URL=http://localhost:8545' >> web.config.dev

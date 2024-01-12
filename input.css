@@ -8,7 +8,7 @@
   html,body {
     @apply w-full h-full bg-black text-white;
     overflow: hidden;
-    font-family: "Proxima Nova", system-ui, sans-serif;
+    font-family: sans-serif;
   }
 
   /* Ensure transitions are consistent across all browsers */
@@ -37,21 +37,75 @@
 /* Header and Drawer Styles */
 
 header {
-  @apply fixed top-0 left-0 w-full h-[10vh] px-2.5 pt-2.5 pb-2.5 pl-12 text-3xl leading-7 z-0;
+  @apply fixed top-0 left-0 w-full h-[50px] px-2.5 pt-2.5 pb-2.5 pl-12 text-3xl leading-7 z-0 outline-white outline outline-2;
 }
 
 /* Main Page Content */
-#page-content { 
+main {
+  @apply fixed top-0 left-0 w-full px-2.5 pt-2.5 pb-2.5 pl-12 leading-7 z-0;
   display: block;
-  text-align: center;
-  margin-left: 0px; 
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 50px;
   width: 100%; 
   height: calc(100% - 50px); 
   overflow-x:hidden; 
   overflow-y:scroll; 
   -webkit-overflow-scrolling: touch; 
-  padding: 20px; 
+  padding: 20px;
+}
+
+/* Responsive behavior for larger screens */
+@media (min-width: 768px) {
+  main {
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+  }
+}
+
+
+/* Index Page Content */
+.index {
+  text-align: center;
+  margin-top: 150px;
+}
+
+/* Md Content */
+
+.md {
+  @apply text-white mx-auto text-left block px-4;
+  padding-bottom: 16%; /* Adjust as needed */
+  h1 {
+    @apply text-2xl font-bold text-gray-300;
+  }
+  h2 {
+    @apply text-xl font-bold text-gray-300;
+  }
+}
+
+/* Link Component */
+
+.link:hover {
+  @apply italic;
+}
+
+/* Socials Component */
+
+.socials {
+  @apply flex justify-center items-center gap-4 py-3;
+}
+
+/* Example of styling for social media icons in the footer */
+.socials .icon {
+  @apply inline-block w-6 h-6; /* Adjust width and height as needed */
+  fill: white; /* If SVGs allow fill styling */
+  filter: brightness(0) invert(1);
+}
+
+.socials  .icon:hover {
+  @apply scale-110; /* Slightly enlarge icon on hover for interactive feedback */
 }
 
 /* Our toggle is a hidden checkbox :shrug: */
@@ -77,7 +131,8 @@ header {
   box-shadow: 0 6px 0 #8d8d8d, 0 12px 0 #8d8d8d; 
 } 
   
-#drawer { 
+#drawer {
+  @apply fixed top-0 left-0 w-full h-full bg-black text-white outline-white outline outline-2;
   position: fixed; 
   top: 0; 
   left:-150px; 
@@ -98,17 +153,14 @@ header {
 } 
 
 #drawer-toggle:checked ~ #drawer-toggle-label, 
-#drawer-toggle:checked ~ header { 
+#drawer-toggle:checked ~ header,
+#drawer-toggle:checked ~ main{ 
   left: 150px; 
 } 
 
 #drawer-toggle:checked ~ #drawer { 
   left: 0px; 
 } 
-
-#drawer-toggle:checked ~ #page-content { 
-  margin-left: 150px; 
-}
 
 /* Menu item styles */ 
 
@@ -136,16 +188,13 @@ header {
   } 
 
   #drawer-toggle:checked ~ #drawer-toggle-label, 
-  #drawer-toggle:checked ~ header { 
+  #drawer-toggle:checked ~ header,
+  #drawer-toggle:checked ~ main { 
     left: calc(100% - 50px); 
   } 
 
   #drawer-toggle:checked ~ #drawer { 
     width: calc(100% - 50px); 
     padding: 20px; 
-  } 
-
-  #drawer-toggle:checked ~ #page-content { 
-    margin-left: calc(100% - 50px); 
-  } 
+  }
 }

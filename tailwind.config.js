@@ -6,9 +6,13 @@ module.exports = {
   },
   theme: {
     extend: {
+      fontFamaily: {
+        sans: ['Inter var', 'sans-serif'],
+      },
       colors: {
         black: '#000',
         white: '#fff',
+        accent: '#f56565',
         gray: {
           100: '#f7fafc',
           200: '#edf2f7',
@@ -23,9 +27,6 @@ module.exports = {
       },
       userSelect: ['none']
     },
-  },
-  variants: {
-    extend: {},
   },
   plugins: [],
 };

@@ -2,9 +2,8 @@ use std::path::PathBuf;
 
 use cid::Cid;
 use pulldown_cmark::{html, Options, Parser};
-use regex::Regex;
 
-use crate::types::{Manifest, Object};
+use crate::types::Object;
 
 use super::env::APP_IPFS_GATEWAY_URL;
 
