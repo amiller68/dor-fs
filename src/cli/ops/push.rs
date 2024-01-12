@@ -5,7 +5,7 @@ use cid::Cid;
 
 use crate::cli::config::{Config, ConfigError};
 use crate::device::{Device, DeviceError};
-use crate::types::DorStore;
+use crate::types::Manifest;
 
 /// Push a file to the remote ipfs node
 pub async fn push_file(device: &Device, file_path: &PathBuf) -> Result<Cid, PushError> {
@@ -46,12 +46,16 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
 
     let objects = next_base.objects();
 
+    println!("Pushing {} objects", objects.len());
     // Tell the remote to pin all the objects
     for (path, object) in objects.iter() {
+        // TODO: this doesn't work with infura for some reason
         // See if the cid already exists on the remote
-        if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
-            continue;
-        };
+        // if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
+        //     println!("Skipping {} as it already exists", path.display());
+        //     continue;
+        // };
+        println!("Pushing {}", path.display());
         let cid = push_file(&device, &working_dir.join(path)).await?;
         if cid != *object.cid() {
             return Err(PushError::CidMismatch(cid, *object.cid()));
@@ -59,7 +63,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
     }
 
     // Write the dor store against the remote
-    let new_root_cid = device.write_dor_store(next_base, true).await?;
+    let new_root_cid = device.write_manifest(next_base, true).await?;
 
     // Push the new root cid to the eth client
     device.update_root_cid(*root_cid, new_root_cid).await?;
@@ -87,5 +91,5 @@ pub enum PushError {
     #[error("missmatched root cid: {0} != {1}")]
     MissmatchedRootCid(Cid, Cid),
     #[error("missmatched base: {0:?} != {1:?}")]
-    MissmatchedBase(DorStore, DorStore),
+    MissmatchedBase(Manifest, Manifest),
 }

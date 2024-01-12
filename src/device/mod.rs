@@ -10,11 +10,16 @@ use futures_util::stream::TryStreamExt;
 mod eth;
 mod ipfs;
 
+#[cfg(target_arch = "wasm32")]
+pub use eth::RootCidError;
 pub use eth::{EthClient, EthClientError, EthRemote, RootCid};
-pub use ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsError, IpfsGateway, IpfsRemote};
+#[cfg(not(target_arch = "wasm32"))]
+pub use ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsRemote};
+pub use ipfs::{IpfsError, IpfsGateway};
 
-use crate::types::DorStore;
+use crate::types::Manifest;
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Union of IPFS and Ethereum clients for coordinating pushing and pulling
 /// dor-store updates to and from remote infrastructure.
 /// It is NOT a reflection of dor-store state. This state should be handled
@@ -35,6 +40,7 @@ pub struct Device {
     wallet: LocalWallet,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// One stop shop for coordinating interactions with a given remote configuration
 impl Device {
     pub fn new(
@@ -63,51 +69,51 @@ impl Device {
 
     /* Dor Store Helpers */
 
-    /// Read a Block by its Cid as a DorStore from Ipfs
+    /// Read a Block by its Cid as a Manifest from Ipfs
     /// # Args
-    /// - cid: The cid of the DorStore object
+    /// - cid: The cid of the Manifest object
     /// - remote: whether to read against the remote of local IPFS client
-    pub async fn read_dor_store(&self, cid: &Cid, remote: bool) -> Result<DorStore, DeviceError> {
-        let dor_store_data = self.read_ipfs_data(cid, remote).await?;
-        let dor_store = serde_json::from_slice(&dor_store_data)?;
-        Ok(dor_store)
+    pub async fn read_manifest(&self, cid: &Cid, remote: bool) -> Result<Manifest, DeviceError> {
+        let manifest_data = self.read_ipfs_data(cid, remote).await?;
+        let manifest = serde_json::from_slice(&manifest_data)?;
+        Ok(manifest)
     }
 
-    /// Write a DorStore as a block on Ipfs
+    /// Write a Manifest as a block on Ipfs
     /// # Args
     /// - remote: whether to write against the remote of local IPFS client
-    /// # Returns the Cid of the DorStore object
-    pub async fn write_dor_store(
+    /// # Returns the Cid of the Manifest object
+    pub async fn write_manifest(
         &self,
-        dor_store: &DorStore,
+        manifest: &Manifest,
         remote: bool,
     ) -> Result<Cid, DeviceError> {
-        let dor_store_data = serde_json::to_vec(&dor_store)?;
-        let dor_store_data = Cursor::new(dor_store_data);
-        let cid = self.write_ipfs_data(dor_store_data, remote).await?;
+        let manifest_data = serde_json::to_vec(&manifest)?;
+        let manifest_data = Cursor::new(manifest_data);
+        let cid = self.write_ipfs_data(manifest_data, remote).await?;
         Ok(cid)
     }
 
-    /// Hash a DorStore object against Ipfs
+    /// Hash a Manifest object against Ipfs
     /// # Args
-    /// - dor_store: the DorStore instance to hash
+    /// - manifest: the Manifest instance to hash
     /// - remote: whether to hash against the remote or local IPFS client
-    /// # Returns the Cid of the DorStore object
-    pub async fn hash_dor_store(
+    /// # Returns the Cid of the Manifest object
+    pub async fn hash_manifest(
         &self,
-        dor_store: &DorStore,
+        manifest: &Manifest,
         remote: bool,
     ) -> Result<Cid, DeviceError> {
-        let dor_store_data = serde_json::to_vec(&dor_store)?;
-        let dor_store_data = Cursor::new(dor_store_data);
-        let cid = self.hash_ipfs_data(dor_store_data, remote).await?;
+        let manifest_data = serde_json::to_vec(&manifest)?;
+        let manifest_data = Cursor::new(manifest_data);
+        let cid = self.hash_ipfs_data(manifest_data, remote).await?;
         Ok(cid)
     }
 
     /* Eth Helpers */
 
     /// Get the chain id in use
-    pub fn chain_id(&self) -> u16 {
+    pub fn chain_id(&self) -> u32 {
         self.eth.chain_id()
     }
 
@@ -263,6 +269,7 @@ impl Device {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, thiserror::Error)]
 pub enum DeviceError {
     #[error("cid error: {0}")]

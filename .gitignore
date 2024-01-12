@@ -2,8 +2,9 @@ target/
 pkg/
 lib/
 cache/
+dist/
 out/
-playground/
+playground/.fs
 .gas-snapshot
-.env
-.env.dev
+web.config.dev
+src/wasm/env.rs

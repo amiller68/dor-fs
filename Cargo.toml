@@ -1,39 +1,47 @@
 [package]
-name = "dor-store"
+name = "krondor-org"
 version = "0.1.0"
 edition = "2021"
-# TODO: License
+license = "Unlicense"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-#TODO: make looser version reqs
 [dependencies]
-anyhow = "1.0.75"
-blake3 = "1.5.0"
+anyhow = "^1"
+blake3 = "^1.5"
 chrono = { version = "^0.4", features = ["serde"] }
-cid = { version = "0.11.0", features = ["serde-codec"] }
-clap = { version = "^4", features = ["derive"] }
-dotenvy = "0.15.7"
-ethers = { version =  "2.0.10", features = ["rustls"] }
-fs-tree = "0.5.5"
-futures-util = "0.3.29"
+cid = { version = "^0.11", features = ["serde-codec"] }
+# TODO: alloy-rs instead
+ethers = { version =  "^2", features = ["rustls"] }
+futures-util = "^0.3"
 http = "^0.2"
-ipfs-api-backend-hyper = { version = "^0.6", features = ["with-hyper-tls"] }
-libipld = { version = "0.16.0", features = ["serde-codec"] }
-pico-args = "0.5.0"
-rand = "0.8.5"
-reqwest = { version = "0.11.20", features = ["trust-dns"] }
-serde = "1.0.193"
-serde_json = "1.0.106"
-thiserror = "1.0.50"
-tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread", "time"] }
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+rand = "^0.8"
+reqwest = { version = "^0.11", features = ["trust-dns"] }
+serde = "^1"
+serde_json = "^1"
+thiserror = "^1"
+tracing = "^0.1"
+tracing-subscriber = "^0.3"
 url = { version = "^2", features = ["serde"] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-getrandom = { version = "0.2", features = ["js"] }
+[build-dependencies]
+dotenv = "^0.15"
 
-[dev-dependencies]
-wasm-bindgen-test = "0.3.37"
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+clap = { version = "^4", features = ["derive"] }
+ipfs-api-backend-hyper = { version = "^0.6", features = ["with-hyper-tls"] }
+fs-tree = "^0.5"
+tokio = { version = "^1.32", features = ["macros", "rt-multi-thread", "time"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+async-trait = "^0.1"
+console_error_panic_hook = "^0.1"
+getrandom = { version = "0.2", features = ["js"] }
+leptos = { version = "^0.5", features = ["csr", "nightly"] }
+leptos_router = { version = "^0.5", features = ["csr", "nightly"] }
+leptos-use = "0.8.1"
+leptos-struct-table = { version = "^0.4", features = ["chrono"] }
+pulldown-cmark = "^0.9"
+regex = "^1"
+web-sys = { version = "^0.3", features = ["HtmlMediaElement"] }

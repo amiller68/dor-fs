@@ -21,7 +21,7 @@ pub use root_cid::{RootCid, RootCidError};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthRemote {
     pub rpc_url: Url,
-    pub chain_id: u16,
+    pub chain_id: u32,
 }
 
 impl Display for EthRemote {
@@ -34,7 +34,7 @@ impl Display for EthRemote {
 #[derive(Debug, Clone)]
 pub struct EthClient {
     provider: Provider<Http>,
-    chain_id: u16,
+    chain_id: u32,
     contract: Option<Contract<ethers::providers::Provider<Http>>>,
     signer: Option<SignerMiddleware<Provider<Http>, LocalWallet>>,
 }
@@ -56,7 +56,7 @@ impl TryFrom<EthRemote> for EthClient {
 
 impl EthClient {
     /// Get the configured chain id
-    pub fn chain_id(&self) -> u16 {
+    pub fn chain_id(&self) -> u32 {
         self.chain_id
     }
 

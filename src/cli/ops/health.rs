@@ -37,7 +37,7 @@ pub async fn health(config: &Config) -> Result<(), HealthError> {
 
 struct HealthReport {
     alias: Option<String>,
-    chain_id: u16,
+    chain_id: u32,
     root_cid: Option<Cid>,
     local_ipfs_online: bool,
     ipfs_online: bool,

@@ -1,7 +1,7 @@
 use cid::Cid;
 use serde::{Deserialize, Serialize};
 
-use crate::types::DorStore;
+use crate::types::Manifest;
 
 mod log;
 
@@ -14,34 +14,34 @@ pub struct ChangeLog {
     /// The log of changes
     log: Log,
     /// The versions of the DorFS currently staged
-    versions: Vec<(Cid, DorStore)>,
+    versions: Vec<(Cid, Manifest)>,
 }
 
 impl ChangeLog {
-    pub fn new(manager_alias: String, dor_store: &DorStore, root_cid: &Cid) -> Self {
+    pub fn new(manager_alias: String, manifest: &Manifest, root_cid: &Cid) -> Self {
         let mut log = Log::new();
-        for (path, object) in dor_store.objects().iter() {
+        for (path, object) in manifest.objects().iter() {
             log.insert(path.clone(), (*object.cid(), ChangeType::Base));
         }
         Self {
             manager_alias,
             log,
-            versions: vec![(*root_cid, dor_store.clone())],
+            versions: vec![(*root_cid, manifest.clone())],
         }
     }
 
-    pub fn wipe(&mut self, dor_store: &DorStore, root_cid: &Cid) {
+    pub fn wipe(&mut self, manifest: &Manifest, root_cid: &Cid) {
         let mut log = Log::new();
-        for (path, object) in dor_store.objects().iter() {
+        for (path, object) in manifest.objects().iter() {
             log.insert(path.clone(), (*object.cid(), ChangeType::Base));
         }
         self.log = log;
-        self.versions = vec![(*root_cid, dor_store.clone())];
+        self.versions = vec![(*root_cid, manifest.clone())];
     }
 
-    pub fn update(&mut self, log: &Log, dor_store: &DorStore, root_cid: &Cid) {
+    pub fn update(&mut self, log: &Log, manifest: &Manifest, root_cid: &Cid) {
         self.log = log.clone();
-        self.versions.push((*root_cid, dor_store.clone()));
+        self.versions.push((*root_cid, manifest.clone()));
     }
 
     pub fn manager_alias(&self) -> &String {
@@ -56,11 +56,11 @@ impl ChangeLog {
         DisplayableLog(self.log.clone())
     }
 
-    pub fn first_version(&self) -> Option<&(Cid, DorStore)> {
+    pub fn first_version(&self) -> Option<&(Cid, Manifest)> {
         self.versions.first()
     }
 
-    pub fn last_version(&self) -> Option<&(Cid, DorStore)> {
+    pub fn last_version(&self) -> Option<&(Cid, Manifest)> {
         self.versions.last()
     }
 }

@@ -23,9 +23,9 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
     let working_dir = config.working_dir().clone();
     let updates = diff(config).await?;
     let mut change_log = config.change_log()?;
-    let base_dor_store = config.base()?;
-    let (last_root_cid, last_dor_store) = change_log.last_version().unwrap().clone();
-    let mut update_dor_store = base_dor_store.clone();
+    let base_manifest = config.base()?;
+    let (last_root_cid, last_manifest) = change_log.last_version().unwrap().clone();
+    let mut update_manifest = base_manifest.clone();
 
     let change_log_iter = updates.iter();
     // Iterate over the ChangeLog -- play updates against the base ... probably better to do this
@@ -44,35 +44,34 @@ pub async fn stage(config: &Config) -> Result<(), StageError> {
             if added_cid != *cid {
                 return Err(StageError::CidMismatch(added_cid, *cid));
             }
-            // Insert the file into the DorStore
+            // Insert the file into the Manifest
             if diff_type == &ChangeType::Added {
                 let object = Object::new(added_cid);
-                update_dor_store.insert_object(path.clone(), object.clone());
+                update_manifest.insert_object(path, &object);
             } else if diff_type == &ChangeType::Modified {
-                let mut d = update_dor_store.clone();
-                let object = d.update_object(path, added_cid);
-                update_dor_store.insert_object(path.clone(), object.clone());
+                let object = update_manifest.get_object_mut(path).unwrap();
+                object.update(added_cid);
             }
         }
 
-        // If the file is a file, we just remove it from the DorStore
+        // If the file is a file, we just remove it from the Manifest
         // It won't be visible, but should be within the Fs History
         if diff_type == &ChangeType::Removed {
-            update_dor_store.remove_object(path);
+            update_manifest.remove_object(path);
         }
     }
 
-    if update_dor_store == last_dor_store {
+    if update_manifest == last_manifest {
         tracing::info!("no changes to stage");
         return Ok(());
     }
 
-    update_dor_store.set_previous_root(last_root_cid);
+    update_manifest.set_previous_root(last_root_cid);
 
     // Hash the dor store against the remote
-    let update_root_cid = device.hash_dor_store(&update_dor_store, false).await?;
+    let update_root_cid = device.hash_manifest(&update_manifest, false).await?;
 
-    change_log.update(&updates, &update_dor_store, &update_root_cid);
+    change_log.update(&updates, &update_manifest, &update_root_cid);
 
     config.set_change_log(change_log)?;
 

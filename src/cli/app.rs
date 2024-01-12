@@ -3,8 +3,8 @@ use std::fmt::{self, Display};
 pub use super::args::{Args, Command, Parser};
 use super::config::{Config, ConfigError};
 use super::ops::{
-    device_subcommand, health, init, pull, push, schema_subcommand, stage, DeviceSubcommandError,
-    HealthError, InitError, PullError, PushError, SchemaSubcommandError, StageError,
+    device_subcommand, health, init, pull, push, stage, tag, DeviceSubcommandError, HealthError,
+    InitError, PullError, PushError, StageError, TagError,
 };
 
 pub struct App;
@@ -39,8 +39,8 @@ impl App {
                 let displayable_change_log = change_log.displayable();
                 println!("{}", displayable_change_log);
             }
-            Command::Schema { subcommand } => {
-                schema_subcommand(&config, &subcommand).await?;
+            Command::Tag { name, path, value } => {
+                tag(&config, &name, &path, &value).await?;
             }
             Command::Push => {
                 push(&config).await?;
@@ -58,7 +58,7 @@ pub enum AppError {
     Health(#[from] HealthError),
     Stage(#[from] StageError),
     Push(#[from] PushError),
-    SchemaSubcommand(#[from] SchemaSubcommandError),
+    Tag(#[from] TagError),
     Pull(#[from] PullError),
 }
 

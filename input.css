@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Gloabl Styles */
+
+@layer base {
+  html,body {
+    @apply w-full h-full bg-black text-white;
+    overflow: hidden;
+    font-family: sans-serif;
+  }
+
+  /* Ensure transitions are consistent across all browsers */
+  * { 
+    -webkit-box-sizing: border-box; 
+    -moz-box-sizing: border-box; 
+    -o-box-sizing: border-box; 
+    box-sizing: border-box; 
+    /* adds animation for all transitions */ 
+    -webkit-transition: .25s ease-in-out; 
+    -moz-transition: .25s ease-in-out; 
+    -o-transition: .25s ease-in-out; 
+    transition: .25s ease-in-out; 
+    margin: 0; 
+    padding: 0;
+    -webkit-text-size-adjust: none; 
+  }
+}
+
+/* TODO: I ripped off this drawer style to get something working quickly.
+  It needs to be cleaned up and made more generic. -- I think some of
+  it is gonna be a pain to worth with eventually
+  The Longer I look at this the more I hate it, so I'm just gonna ignore it for now
+*/
+
+/* Header and Drawer Styles */
+
+header {
+  @apply fixed top-0 left-0 w-full h-[50px] px-2.5 pt-2.5 pb-2.5 pl-12 text-3xl leading-7 z-0 outline-white outline outline-2;
+}
+
+/* Main Page Content */
+main {
+  @apply fixed top-0 left-0 w-full px-2.5 pt-2.5 pb-2.5 pl-12 leading-7 z-0;
+  display: block;
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 52px;
+  width: 100%; 
+  height: calc(100% - 50px); 
+  overflow-x:hidden; 
+  overflow-y:scroll; 
+  -webkit-overflow-scrolling: touch; 
+  padding: 20px;
+}
+
+/* Responsive behavior for larger screens */
+@media (min-width: 768px) {
+  main {
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+  }
+}
+
+
+/* Index Page Content */
+.index {
+  text-align: center;
+  margin-top: 150px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 60%;
+  h1 {
+    @apply text-4xl font-bold text-gray-300;
+  }
+}
+
+/* Md Content */
+
+.md {
+  @apply text-white mx-auto text-left block px-4;
+  padding-bottom: 16%; /* Adjust as needed */
+  h1 {
+    @apply text-2xl font-bold text-gray-300;
+  }
+  h2 {
+    @apply text-xl font-bold text-gray-300;
+  }
+  a:hover {
+    @apply italic;
+  }
+}
+
+/* Link Component */
+
+.link:hover {
+  @apply italic;
+}
+
+/* Socials Component */
+
+.socials {
+  @apply flex justify-center items-center gap-4 py-3;
+}
+
+/* Example of styling for social media icons in the footer */
+.socials .icon {
+  @apply inline-block w-6 h-6; /* Adjust width and height as needed */
+  fill: white; /* If SVGs allow fill styling */
+  filter: brightness(0) invert(1);
+}
+
+.socials  .icon:hover {
+  @apply scale-110; /* Slightly enlarge icon on hover for interactive feedback */
+}
+
+/* Our toggle is a hidden checkbox :shrug: */
+#drawer-toggle { 
+  @apply hidden;
+}
+
+/* And a fixed position label to go with it */
+#drawer-toggle-label { 
+  @apply fixed left-0 h-12 w-12 block bg-transparent z-10 
+}
+
+/* This rest of this is just bewildering */
+#drawer-toggle-label:before {
+  content: ''; 
+  display: block; 
+  position: absolute; 
+  height: 2px; 
+  width: 24px; 
+  left: 13px; 
+  top: 18px; 
+  background: #8d8d8d;
+  box-shadow: 0 6px 0 #8d8d8d, 0 12px 0 #8d8d8d; 
+} 
+  
+#drawer {
+  @apply fixed top-0 left-0 w-full h-full bg-black text-white outline-white outline outline-2;
+  position: fixed; 
+  top: 0; 
+  left:-150px; 
+  height: 100%; 
+  width: 150px; 
+  overflow-x: hidden; 
+  overflow-y: scroll; 
+  padding: 20px; 
+  -webkit-overflow-scrolling: touch; 
+} 
+  
+
+/* checked styles (menu open state) */ 
+#drawer-toggle:checked ~ #drawer-toggle-label { 
+  height: 100%; 
+  width: calc(100% - 150px); 
+  background: rgba(255,255,255,.8); 
+} 
+
+#drawer-toggle:checked ~ #drawer-toggle-label, 
+#drawer-toggle:checked ~ header,
+#drawer-toggle:checked ~ main{ 
+  left: 150px; 
+} 
+
+#drawer-toggle:checked ~ #drawer { 
+  left: 0px; 
+} 
+
+/* Menu item styles */ 
+
+#drawer ul { 
+  list-style-type:none; 
+} 
+
+#drawer ul a { 
+  display:block; 
+  padding:10px; 
+  color:#c7c7c7; 
+  text-decoration:none; 
+} 
+
+#drawer ul a:hover { 
+  color:white; 
+}
+  
+/* Responsive MQ */ 
+  
+@media all and (max-width:350px) { 
+  #drawer-toggle:checked ~ #drawer-toggle-label { 
+    height: 100%; 
+    width: 50px; 
+  } 
+
+  #drawer-toggle:checked ~ #drawer-toggle-label, 
+  #drawer-toggle:checked ~ header,
+  #drawer-toggle:checked ~ main { 
+    left: calc(100% - 50px); 
+  } 
+
+  #drawer-toggle:checked ~ #drawer { 
+    width: calc(100% - 50px); 
+    padding: 20px; 
+  }
+}
