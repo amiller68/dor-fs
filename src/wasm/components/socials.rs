@@ -16,6 +16,9 @@ pub fn Socials() -> impl IntoView {
             <a href="tg://resolve?domain=lord_krondor" class="icon">
                 <img src="/static/icons/telegram.svg" alt="Telegram" class="icon"/>
             </a>
+            <a href="https://www.linkedin.com/in/al-miller-110953171/" class="icon">
+                <img src="/static/icons/linkedin.svg" alt="LinkedIn" class="icon"/>
+            </a>
         </div>
     }
 }

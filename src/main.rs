@@ -1,4 +1,4 @@
-use krondor_cms::prelude::App;
+use krondor_org::prelude::App;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]

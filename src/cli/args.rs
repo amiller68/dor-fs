@@ -67,7 +67,7 @@ pub enum DeviceSubcommand {
         #[clap(long)]
         eth_rpc: Url,
         #[clap(long)]
-        eth_chain_id: u16,
+        eth_chain_id: u32,
         #[clap(long)]
         contract_address: Address,
         #[clap(long, short)]

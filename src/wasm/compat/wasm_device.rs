@@ -12,6 +12,7 @@ pub use crate::device::{IpfsError, IpfsGateway};
 use crate::types::Manifest;
 
 use crate::wasm::env::{APP_CHAIN_ID, APP_CONTRACT_ADDRESS, APP_IPFS_GATEWAY_URL, APP_RPC_URL};
+use crate::wasm::utils::gateway_url;
 
 /// One stop shop for reading Store data from IPFS and Ethereum
 pub struct WasmDevice {
@@ -29,7 +30,7 @@ impl WasmDevice {
     pub fn new() -> Result<Self, WasmDeviceError> {
         let contract_address =
             Address::from_str(APP_CONTRACT_ADDRESS).expect("invalid contract address");
-        let chain_id = u16::from_str(APP_CHAIN_ID)?;
+        let chain_id = u32::from_str(APP_CHAIN_ID)?;
         let ipfs_gateway_url = APP_IPFS_GATEWAY_URL;
         let ipfs_gateway = IpfsGateway::new(ipfs_gateway_url.parse()?);
         let eth_remote = EthRemote {
@@ -59,7 +60,7 @@ impl WasmDevice {
     /* Eth Helpers */
 
     /// Get the chain id in use
-    pub fn chain_id(&self) -> u16 {
+    pub fn chain_id(&self) -> u32 {
         self.eth.chain_id()
     }
 
@@ -79,10 +80,12 @@ impl WasmDevice {
     pub async fn read_ipfs_gateway_data(
         &self,
         cid: &Cid,
-        path: Option<PathBuf>,
+        _path: Option<PathBuf>,
     ) -> Result<Vec<u8>, WasmDeviceError> {
-        let data = self.ipfs_gateway.get(cid, path).await?;
-        Ok(data)
+        let url = gateway_url(cid);
+        let resp = reqwest::get(url).await.expect("failed to get response");
+        let bytes = resp.bytes().await.expect("failed to get bytes");
+        Ok(bytes.to_vec())
     }
 }
 

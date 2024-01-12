@@ -28,9 +28,7 @@ impl Manifest {
 
     #[allow(dead_code)]
     pub fn object_by_cid(&self, cid: &Cid) -> Option<(&PathBuf, &Object)> {
-        self.objects
-            .iter()
-            .find(|(_, object)| object.cid() == cid)
+        self.objects.iter().find(|(_, object)| object.cid() == cid)
     }
 
     pub fn insert_object(&mut self, path: &Path, object: &Object) {

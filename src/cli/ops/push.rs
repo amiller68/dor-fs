@@ -46,12 +46,16 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
 
     let objects = next_base.objects();
 
+    println!("Pushing {} objects", objects.len());
     // Tell the remote to pin all the objects
     for (path, object) in objects.iter() {
+        // TODO: this doesn't work with infura for some reason
         // See if the cid already exists on the remote
-        if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
-            continue;
-        };
+        // if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
+        //     println!("Skipping {} as it already exists", path.display());
+        //     continue;
+        // };
+        println!("Pushing {}", path.display());
         let cid = push_file(&device, &working_dir.join(path)).await?;
         if cid != *object.cid() {
             return Err(PushError::CidMismatch(cid, *object.cid()));

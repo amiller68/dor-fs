@@ -113,7 +113,7 @@ impl Device {
     /* Eth Helpers */
 
     /// Get the chain id in use
-    pub fn chain_id(&self) -> u16 {
+    pub fn chain_id(&self) -> u32 {
         self.eth.chain_id()
     }
 

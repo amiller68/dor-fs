@@ -4,7 +4,7 @@
 
 pub const APP_VERSION: &str = "0.1.0";
 pub const APP_NAME: &str = "Krondor.Org";
-pub const APP_CONTRACT_ADDRESS: &str = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d";
-pub const APP_CHAIN_ID: &str = "31337";
-pub const APP_RPC_URL: &str = "http://localhost:8545";
-pub const APP_IPFS_GATEWAY_URL: &str = "http://localhost:8080";
+pub const APP_CONTRACT_ADDRESS: &str = "0x8740bb2ded8C1aaABbBcbB6f7087B9cEE944B31D";
+pub const APP_CHAIN_ID: &str = "11155111";
+pub const APP_RPC_URL: &str = "https://sepolia.infura.io/v3/c2a72953873d451f81839acff0f498cd";
+pub const APP_IPFS_GATEWAY_URL: &str = "https://krondor.infura-ipfs.io";

@@ -81,7 +81,7 @@ pub fn InternalRouter() -> impl IntoView {
         <Router>
                 <input type="checkbox" id="drawer-toggle" name="drawer-toggle"/>
                 <label for="drawer-toggle" id="drawer-toggle-label"></label>
-                <header>{APP_NAME}</header>
+                <header><InternalLink query="".to_string()  msg={APP_NAME.to_string()}/></header>
                 <main>
                     <PageRoute/>
                 </main>

@@ -759,7 +759,7 @@ main {
   text-align: left;
   margin-left: auto;
   margin-right: auto;
-  margin-top: 50px;
+  margin-top: 52px;
   width: 100%;
   height: calc(100% - 50px);
   overflow-x:hidden;
@@ -783,6 +783,20 @@ main {
 .index {
   text-align: center;
   margin-top: 150px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 60%;
+  h1 {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+  h1 {
+    font-weight: 700;
+  }
+  h1 {
+    --tw-text-opacity: 1;
+    color: rgb(226 232 240 / var(--tw-text-opacity));
+  }
 }
 
 /* Md Content */
@@ -819,6 +833,9 @@ main {
   h2 {
     --tw-text-opacity: 1;
     color: rgb(226 232 240 / var(--tw-text-opacity));
+  }
+  a:hover {
+    font-style: italic;
   }
 }
 

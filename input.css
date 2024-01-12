@@ -47,7 +47,7 @@ main {
   text-align: left;
   margin-left: auto;
   margin-right: auto;
-  margin-top: 50px;
+  margin-top: 52px;
   width: 100%; 
   height: calc(100% - 50px); 
   overflow-x:hidden; 
@@ -70,6 +70,12 @@ main {
 .index {
   text-align: center;
   margin-top: 150px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 60%;
+  h1 {
+    @apply text-4xl font-bold text-gray-300;
+  }
 }
 
 /* Md Content */
@@ -82,6 +88,9 @@ main {
   }
   h2 {
     @apply text-xl font-bold text-gray-300;
+  }
+  a:hover {
+    @apply italic;
   }
 }
 

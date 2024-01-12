@@ -4,9 +4,9 @@
   "description": "Simple cms managed blog",
   "scripts": {
     "prepare": "rustup override set nightly && rustup target add wasm32-unknown-unknown && cargo install trunk --locked",
-    "dev": "trunk serve",
-    "build": "trunk build --release",
-    "e2e": "cd e2e && yarn && playwright test"
+    "dev": "trunk serve --port 3000",
+    "start": "trunk serve --release --port 3000",
+    "build": "trunk build --release"
   },
   "author": "Al Miller <al@krondor.org>",
   "license": "MIT",
