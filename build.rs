@@ -90,8 +90,7 @@ fn report_repository_version() {
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    let target = std::env::var("TARGET").unwrap();
-    if target.contains("wasm32") {
+    if cfg!(target_arch = "wasm32") {
         web();
     }
     report_build_profile();
