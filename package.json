@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Simple cms managed blog",
   "scripts": {
-    "prepare": "rustup override set nightly && rustup target add wasm32-unknown-unknown && cargo install trunk --locked",
+    "prepare": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup override set nightly && rustup target add wasm32-unknown-unknown && cargo install trunk --locked",
     "dev": "trunk serve --port 3000",
     "start": "trunk serve --release --port 3000",
     "build": "trunk build --release"
