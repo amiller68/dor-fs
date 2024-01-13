@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::device::DeviceError;
+use crate::cli::device::DeviceError;
 use crate::types::{Audio, Schema, SchemaError, Visual, Writing};
 
 use crate::cli::config::{Config, ConfigError};

@@ -1,8 +1,11 @@
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use cid::Cid;
 use serde::{Deserialize, Serialize};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::Path;
 
 use super::object::Object;
 
@@ -18,10 +21,6 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    pub fn set_previous_root(&mut self, cid: Cid) {
-        self.previous_root = cid;
-    }
-
     pub fn objects(&self) -> &BTreeMap<PathBuf, Object> {
         &self.objects
     }
@@ -29,6 +28,13 @@ impl Manifest {
     #[allow(dead_code)]
     pub fn object_by_cid(&self, cid: &Cid) -> Option<(&PathBuf, &Object)> {
         self.objects.iter().find(|(_, object)| object.cid() == cid)
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Manifest {
+    pub fn set_previous_root(&mut self, cid: Cid) {
+        self.previous_root = cid;
     }
 
     pub fn insert_object(&mut self, path: &Path, object: &Object) {
@@ -42,21 +48,6 @@ impl Manifest {
     pub fn get_object_mut(&mut self, path: &PathBuf) -> Option<&mut Object> {
         self.objects.get_mut(path)
     }
-
-    // pub fn update_object(&mut self, path: &PathBuf, cid: Cid) {
-    //     let object = self.get_object_mut(path).unwrap();
-    //     object.update(cid);
-    //     let mut objects = self.objects();
-    //     objects.insert(path.clone(), object.clone());
-
-    //     // self.insert_object(path, object)
-    // }
-
-    // pub fn tag_object(&mut self, path: &PathBuf, schema: &impl Schema) {
-    //     let object = self.get_object_mut(path).unwrap();
-    //     object.set_metdata(schema.into_value());
-    //     self.insert_object(path, object)
-    // }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]

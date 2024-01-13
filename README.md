@@ -8,13 +8,12 @@ This is a combined CMS and personal Web3 blog that I wrote for myself in Rust. T
 - Trunk
 - Foundry
 - Ipfs
-- Anvil
 
 ## The Stack
 
 There are four main components to this project:
 
-- An Ipfs node that stores the content of the site. This node should be writable by the owner and readable by anyone through a public gateway.
+- An Ipfs node that stores the content of the site. This node should be writable by the owner and readable by anyone through a public gateway. It should expose `v0/block/add` and `v0/block/stat` methods. It should also expose a public gateway that can be used to read the content of the site.
 - A RootCid contract that points to the latest version of the site's content, as specified within a `manifest` file. This `manifest` is hashed, pushed to Ipfs, and used to link to site data and metadata.
 - A CLI that is able to pull, update, and push new content to the Ipfs node and update the RootCid contract.
 - A Web App that is able to read the Cid from the RootCid contract and display the current content of the site as specified by the `manifest` file.
@@ -24,7 +23,7 @@ There are four main components to this project:
 Be sure to clone this repo with the `--recursive` flag to pull in the submodules.
 
 ```bash
-git clone --recurse-submodules
+git clone --recurse-submodules git@github.com:amiller68/krondor-org.git
 ```
 
 A valid ABI is included in version control, but if you need to compile the solidity contracts yourself, you can do so with the following:
@@ -46,17 +45,19 @@ anvil
 ./bin/reset_dev_env.sh
 ```
 
-At which point you should be able to serve the site with trunk using:
+This will push some sample content to your local Ipfs node and update the RootCid contract with the latest version. It will also populate the `web.config.dev` file with the correct contract address and chain id.
+
+At this point you should be able to serve the demo site with trunk using:
 
 ```bash
 yarn dev
 ```
 
-The site should be available at `http://localhost:3000`
+The site should be available at `http://127.0.0.1:3000`
 
 ## Deployment
 
-To deploy the site you'll need to have access to the following:
+To properly deploy the site you'll need to have access to the following:
 
 - An Ipfs API endpoint that you can write to, and want to host your site data on. I use Infura for this.
 - Access to an EVM RPC endpoint that you can write to and publish to version control. I use Infura for this as well.
@@ -92,17 +93,26 @@ cargo run -- device create \
 
 Note: you're Ipfs API url should include any necessary authentication information, such as a username and password, if you're using a service like Infura.
 
+
+You can then select this device with:
+
+```bash
+cargo run -- device set <DEVICE_NAME>
+```
+
 At this point you should populate the `web.config` file with:
 - your contract address
 - your chain id
-- your public eth rpc url
-- your Ipfs gateway url
+- your public eth rpc url -- if you rely on infura for this restrict the origin to your domain
+- your ipfs gateway url
 
 So that the web app can read the contract and display the latest content.
 
+If you've configured everything correctly, you should be able to put this withing your version control of choice.
+
 ### CLI Usage
 
-You must have a local Ipfs node running to use the CLI. You can start one with:
+You must have a local Ipfs node running to use the CLI. This node is used for intermediary staging and hashing. Honestly, it probably isn't necessary, but I haven't had time to refactor it out yet. You can start a local node with:
 
 ```bash
 ipfs daemon
@@ -126,13 +136,13 @@ cargo run -- stage
 # You can also tag files with metadata that will be stored in the manifest
 # Here are example tags that are used in the development environment setup
 # Creates a new piece of 'audio' content
-cargo run -- tag --name audio --path freak-mic-test.mp3 --value '{"title": "Freak on a Leash (Sample)", "project": "mic_test"}'
+cargo run -- tag --name audio --path audio/freak-mic-test.mp3 --value '{"title": "Freak on a Leash (Sample)", "project": "mic_test"}'
 # Creates a new piece of 'writing' content
-cargo run -- tag --name writing --path hello_world.md --value '{"title": "Hello World", "description": "A lil hello!", "genre": "blog"}'
+cargo run -- tag --name writing --path writing/hello_world.md --value '{"title": "Hello World", "description": "A lil hello!", "genre": "blog"}'
 # Creates a new piece of 'visual' content
-cargo run -- tag --name visual  --path petting_turtles.jpg --value '{"title": "Draw me, Naked, Petting the Turtles", "location": "New York", "medium": "blue ink on lined paper"}'
+cargo run -- tag --name visual  --path visual/petting_turtles.jpg --value '{"title": "Draw me, Naked, Petting the Turtles", "location": "New York", "medium": "blue ink on lined paper"}'
 # Push the staged changes to Ipfs and update the RootCid contract
-cargo run -- --dir playground --admin-key <YOUR_PRIVATE_KEY> push
+cargo run -- --admin-key <YOUR_PRIVATE_KEY> push
 ```
 
 You can check the status of your device with:
@@ -149,5 +159,8 @@ If you want to see the results of your CLI changes, you can run the following:
 yarn start
 ```
 
-The site should be available at `http://localhost:3000`
+This should use the configuration in `web.config` to read the RootCid contract and display the latest content that you pushed through the CLI.
 
+The site should likewise be available at `http://localhost:3000`
+
+You can deploy this site to a host of your choice. At that point you should be able to use the CLI to push changes to your Ipfs node and update the RootCid contract, and the web app should be able to read the latest content from the contract and display it.

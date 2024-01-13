@@ -5,9 +5,9 @@ use leptos_router::*;
 use serde::{Deserialize, Serialize};
 
 use crate::types::Manifest;
-use crate::wasm::compat::{WasmDevice, WasmDeviceError};
-use crate::wasm::components::InternalLink;
-use crate::wasm::env::{APP_NAME, APP_VERSION};
+use crate::wasm::device::{WasmDevice, WasmDeviceError};
+use crate::wasm::components::{InternalLink, ErrorMessageBox};
+use crate::wasm::env::APP_NAME;
 
 // This router is an attempt to make SPAs easy
 // Register and use pages here
@@ -18,7 +18,7 @@ mod index;
 mod object;
 mod visual;
 mod writing;
-// mod items;
+mod status;
 
 use about::AboutPage;
 use audio::AudioPage;
@@ -26,18 +26,26 @@ use index::IndexPage;
 use object::ObjectPage;
 use visual::VisualPage;
 use writing::WritingPage;
-// use items::ItemsPage;
+use status::StatusPage;
 
 /// A Shared page context to pass to all pages within our internal router
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PageContext {
-    manifest: Option<Manifest>,
+    root_cid: Cid,
+    chain_id: u32,
+    manifest: Manifest,
     route: Option<String>,
     query: Option<String>,
 }
 
 impl PageContext {
-    pub fn manifest(&self) -> &Option<Manifest> {
+    pub fn root_cid(&self) -> &Cid {
+        &self.root_cid
+    }
+    pub fn chain_id(&self) -> u32 {
+        self.chain_id
+    }
+    pub fn manifest(&self) -> &Manifest {
         &self.manifest
     }
     pub fn route(&self) -> &Option<String> {
@@ -52,12 +60,12 @@ impl IntoView for PageContext {
     fn into_view(self) -> View {
         let page: Box<dyn Page> = match self.route() {
             Some(route) => match route.as_str() {
-                // "items" => ItemsPage::from_ctx(self),
                 "about" => AboutPage::from_ctx(self),
                 "object" => ObjectPage::from_ctx(self),
                 "writing" => WritingPage::from_ctx(self),
                 "audio" => AudioPage::from_ctx(self),
                 "visual" => VisualPage::from_ctx(self),
+                "status" => StatusPage::from_ctx(self),
                 _ => IndexPage::from_ctx(self),
             },
             _ => IndexPage::from_ctx(self),
@@ -92,6 +100,7 @@ pub fn InternalRouter() -> impl IntoView {
                         <li><InternalLink query="?route=writing".to_string()  msg="Writing".to_string()/></li>
                         <li><InternalLink query="?route=audio".to_string()  msg="Audio".to_string()/></li>
                         <li><InternalLink query="?route=visual".to_string()  msg="Visual".to_string()/></li>
+                        <li><InternalLink query="?route=status".to_string()  msg="Status".to_string()/></li>
                     </ul>
                 </nav>
         </Router>
@@ -108,32 +117,61 @@ fn PageRoute() -> impl IntoView {
         || (),
         move |_| async move {
             // TODO: move device init out of here, but works for now
-            let device = WasmDevice::new().expect("failed to init device");
+            // let device = WasmDevice::new().map_err(PageError::WasmDevice)?;
+            let device = match WasmDevice::new().map_err(PageError::WasmDevice) {
+                Ok(device) => device,
+                Err(e) => {
+                    return PageContextResource {
+                        ctx: None,
+                        error_message: Some(e.to_string()),
+                    }
+                }
+            };
+            let chain_id = device.chain_id();
             let route = route.get();
             let query = query.get();
-            let root_cid = device
+            let root_cid = match device
                 .read_root_cid()
-                .await
-                .expect("failed to read root cid");
-            if root_cid == Cid::default() {
-                return PageContext {
-                    manifest: None,
-                    route,
-                    query,
+                .await.map_err(PageError::RootCidRead) {
+                    Ok(cid) => cid,
+                    Err(e) => {
+                        return PageContextResource {
+                            ctx: None,
+                            error_message: Some(e.to_string()),
+                        }
+                    }
                 };
+            if root_cid == Cid::default() {
+                return PageContextResource {
+                    ctx: None,
+                    error_message: Some(PageError::NoRootCid.to_string()),
+                }
             }
-            let manifest = device
+            let manifest = match device
                 .read_manifest(&root_cid)
-                .await
-                .expect("failed to read dor store");
+                .await.map_err(PageError::ManifestRead) {
+                    Ok(manifest) => manifest,
+                    Err(e) => {
+                        return PageContextResource {
+                            ctx: None,
+                            error_message: Some(e.to_string()),
+                        }
+                    }
+                };
+            
 
             let ctx = PageContext {
-                manifest: Some(manifest),
+                root_cid,
+                chain_id,
+                manifest,
                 route,
-                query,
+                query
             };
 
-            ctx
+            PageContextResource {
+                ctx: Some(ctx),
+                error_message: None,
+            }
         },
     );
 
@@ -141,8 +179,40 @@ fn PageRoute() -> impl IntoView {
         <div>
             {move || match ctx.get() {
                 None => view! { Loading... }.into_view(),
-                Some(c) => c.into_view()
+                Some(c) => {
+                    match c.error_message() {
+                        Some(msg) => view! { <ErrorMessageBox msg=msg.clone()/> }.into_view(),
+                        None => c.ctx().into_view(),
+                    }
+                } 
             }}
         </div>
     }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct PageContextResource {
+    ctx: Option<PageContext>,
+    error_message: Option<String>,
+}
+
+impl PageContextResource {
+    fn error_message(&self) -> Option<String> {
+        self.error_message.clone()
+    }
+    fn ctx(&self) -> PageContext {
+        self.ctx.clone().expect("ctx")
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+enum PageError {
+    #[error("Failed to initialize web device: {0}")]
+    WasmDevice(WasmDeviceError),
+    #[error("No valid root cid found, please check that you've pushed a valid manifest")]
+    NoRootCid,
+    #[error("Failed to read root cid: {0}")]
+    RootCidRead(WasmDeviceError),
+    #[error("Failed to read manifest: {0}")]
+    ManifestRead(WasmDeviceError),
 }

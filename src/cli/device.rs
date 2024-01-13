@@ -7,19 +7,11 @@ use ethers::signers::LocalWallet;
 use ethers::types::Address;
 use futures_util::stream::TryStreamExt;
 
-mod eth;
-mod ipfs;
-
-#[cfg(target_arch = "wasm32")]
-pub use eth::RootCidError;
-pub use eth::{EthClient, EthClientError, EthRemote, RootCid};
-#[cfg(not(target_arch = "wasm32"))]
-pub use ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsRemote};
-pub use ipfs::{IpfsError, IpfsGateway};
+use crate::eth::{EthClient, EthClientError, RootCid};
+use crate::ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsError, IpfsGateway, add_data_request, hash_data_request};
 
 use crate::types::Manifest;
 
-#[cfg(not(target_arch = "wasm32"))]
 /// Union of IPFS and Ethereum clients for coordinating pushing and pulling
 /// dor-store updates to and from remote infrastructure.
 /// It is NOT a reflection of dor-store state. This state should be handled
@@ -40,7 +32,6 @@ pub struct Device {
     wallet: LocalWallet,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 /// One stop shop for coordinating interactions with a given remote configuration
 impl Device {
     pub fn new(
@@ -205,10 +196,10 @@ impl Device {
     {
         let add_response = if remote {
             self.ipfs_client
-                .add_with_options(data, ipfs::add_data_request())
+                .add_with_options(data, add_data_request())
         } else {
             self.local_ipfs_client
-                .add_with_options(data, ipfs::add_data_request())
+                .add_with_options(data, add_data_request())
         }
         .await?;
         let hash = add_response.hash;
@@ -227,10 +218,10 @@ impl Device {
     {
         let add_response = if remote {
             self.ipfs_client
-                .add_with_options(data, ipfs::hash_data_request())
+                .add_with_options(data, hash_data_request())
         } else {
             self.local_ipfs_client
-                .add_with_options(data, ipfs::hash_data_request())
+                .add_with_options(data, hash_data_request())
         }
         .await?;
         let hash = add_response.hash;
@@ -269,7 +260,6 @@ impl Device {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, thiserror::Error)]
 pub enum DeviceError {
     #[error("cid error: {0}")]
@@ -281,7 +271,7 @@ pub enum DeviceError {
     #[error("eth error: {0}")]
     EthClient(#[from] EthClientError),
     #[error("root cid error: {0}")]
-    RootCid(#[from] eth::RootCidError),
+    RootCid(#[from] crate::eth::RootCidError),
     #[error("serde error: {0}")]
     Serde(#[from] serde_json::Error),
 }

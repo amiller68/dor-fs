@@ -7,7 +7,8 @@ use ethers::types::Address;
 use fs_tree::FsTree;
 
 use crate::cli::changes::ChangeLog;
-use crate::device::{Device, EthRemote, IpfsRemote};
+use crate::eth::EthRemote;
+use crate::ipfs::IpfsRemote;
 use crate::types::Manifest;
 
 mod on_disk_default;
@@ -17,6 +18,7 @@ use on_disk_default::OnDiskDefault;
 use on_disk_device::OnDiskDevice;
 
 use super::args::Args;
+use super::device::Device;
 
 // Cli Configuration Constants
 

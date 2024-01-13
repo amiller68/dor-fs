@@ -7,9 +7,9 @@ use leptos_use::use_event_listener;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use crate::types::schema::{Audio, Schemas, Visual, Writing};
+use crate::types::schema::Schemas;
 use crate::types::{Manifest, Object};
-use crate::wasm::utils::{gateway_url, markdown_to_html, object_url, origin_url};
+use crate::wasm::utils::{gateway_url, markdown_to_html, object_url};
 
 use super::{Page, PageContext};
 
@@ -30,20 +30,7 @@ impl Page for ObjectPage {
 
 impl IntoView for ObjectPage {
     fn into_view(self) -> View {
-        let manifest = match self.ctx().manifest() {
-            Some(m) => m,
-            None => {
-                return view! {
-                    <div>
-                        <p>
-                            "Oh no! It looks like something went wrong loading this page!"
-                        </p>
-                    </div>
-                }
-                .into_view()
-            }
-        };
-
+        let manifest = self.ctx().manifest();
         let query_str = match self.ctx().query() {
             Some(qs) => qs,
             None => {
@@ -276,9 +263,9 @@ async fn object_markdown_to_html(manifest: &Manifest, object_path: &PathBuf) -> 
     for caps in re.captures_iter(&object_content) {
         if let Some(cap) = caps.get(1) {
             let path = PathBuf::from(cap.as_str());
-
-            if let Some(object) = objects.get(&path) {
-                let path = base_path.join(path);
+            let path = base_path.join(path);
+            let normalized_path = normalize_path(&path);
+            if let Some(object) = objects.get(&normalized_path) {
                 let url = object_url(object);
 
                 let old = format!(r#"src="./{}""#, cap.as_str());
@@ -290,4 +277,15 @@ async fn object_markdown_to_html(manifest: &Manifest, object_path: &PathBuf) -> 
 
     let html = markdown_to_html(result);
     html
+}
+
+fn normalize_path(path: &PathBuf) -> PathBuf {
+    let mut normalized_path = PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::ParentDir => { normalized_path.pop(); },
+            _ => { normalized_path.push(component); }
+        }
+    }
+    normalized_path
 }

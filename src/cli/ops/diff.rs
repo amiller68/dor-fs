@@ -5,7 +5,7 @@ use cid::Cid;
 
 use crate::cli::changes::{ChangeType, Log};
 use crate::cli::config::{Config, ConfigError};
-use crate::device::{Device, DeviceError};
+use crate::cli::device::{Device, DeviceError};
 
 async fn hash_file(device: &Device, path: &PathBuf) -> Result<Cid, DiffError> {
     if !path.exists() {

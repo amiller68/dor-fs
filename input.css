@@ -89,6 +89,9 @@ main {
   h2 {
     @apply text-xl font-bold text-gray-300;
   }
+  a {
+    @apply text-blue-300;
+  }
   a:hover {
     @apply italic;
   }

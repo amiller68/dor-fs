@@ -7,7 +7,7 @@ use super::diff::{diff, DiffError};
 
 use crate::cli::changes::ChangeType;
 use crate::cli::config::{Config, ConfigError};
-use crate::device::{Device, DeviceError};
+use crate::cli::device::{Device, DeviceError};
 use crate::types::Object;
 
 /// Stage a file against the local ipfs node

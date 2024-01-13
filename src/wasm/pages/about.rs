@@ -1,8 +1,6 @@
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
-use serde_json::Value;
-
 use super::{Page, PageContext};
 use crate::wasm::components::StaticMd;
 

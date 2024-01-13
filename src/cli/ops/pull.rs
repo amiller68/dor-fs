@@ -6,7 +6,7 @@ use cid::Cid;
 
 use crate::cli::changes::ChangeLog;
 use crate::cli::config::{Config, ConfigError};
-use crate::device::{Device, DeviceError};
+use crate::cli::device::{Device, DeviceError};
 
 pub async fn file_needs_pull(
     device: &Device,

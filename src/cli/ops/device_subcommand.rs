@@ -1,6 +1,7 @@
 use crate::cli::args::DeviceSubcommand;
 use crate::cli::config::{Config, ConfigError};
-use crate::device::{EthRemote, IpfsRemote};
+use crate::eth::EthRemote;
+use crate::ipfs::IpfsRemote;
 
 pub fn device_subcommand(
     config: &Config,

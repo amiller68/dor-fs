@@ -1,6 +1,6 @@
 mod app;
-mod compat;
 mod components;
+mod device;
 mod env;
 mod pages;
 mod utils;

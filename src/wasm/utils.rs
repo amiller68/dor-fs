@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use cid::Cid;
 use pulldown_cmark::{html, Options, Parser};
 

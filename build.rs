@@ -11,8 +11,6 @@ const WEB_ENV_RS_PATH: &str = "./src/wasm/env.rs";
 /// Initialize our Web Build based on the on-disk config
 /// We do this because Trunk does not bundle Env variables at build or runtime
 fn web() {
-    println!("cargo:rustc-env=EXE_NAME=krondor-org-web");
-
     // Check if we're building for production or development
     let profile = std::env::var("PROFILE").unwrap();
     let config_path = match profile.as_str() {
@@ -90,7 +88,9 @@ fn report_repository_version() {
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    if cfg!(target_arch = "wasm32") {
+    let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    if target_arch == "wasm32" {
+        println!("cargo:rustc-env=OUT_DIR={}", "krondor-org-web");
         web();
     }
     report_build_profile();

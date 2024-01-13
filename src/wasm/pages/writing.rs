@@ -1,15 +1,12 @@
-use std::path::PathBuf;
-
 use async_trait::async_trait;
 use chrono::naive::NaiveDate;
 use cid::Cid;
 use leptos::*;
 use leptos_struct_table::*;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::types::{Object, Writing};
-use crate::wasm::components::{InternalLink, ObjectLink};
+use crate::wasm::components::ObjectLink;
 
 use super::{Page, PageContext};
 
@@ -31,25 +28,23 @@ impl Page for WritingPage {
 impl IntoView for WritingPage {
     fn into_view(self) -> View {
         let items: leptos::RwSignal<Vec<WritingRow>> =
-            create_rw_signal(match self.ctx().manifest() {
-                // Filter for object with metadata that we can contruct Writng from
-                Some(manifest) => {
+            create_rw_signal({
+                let manifest = self.ctx().manifest();
                     let mut writing = manifest
                         .objects()
                         .iter()
-                        .filter(|(path, object)| {
+                        .filter(|(_path, object)| {
                             let metadata = object.metadata();
                             match Writing::try_from(metadata.clone()) {
                                 Ok(_) => true,
                                 Err(_) => false,
                             }
                         })
-                        .map(|(path, object)| object.into())
+                        .map(|(_path, object)| object.into())
                         .collect::<Vec<WritingRow>>();
                     writing.sort_by(|a, b| b.date.cmp(&a.date));
                     writing
-                }
-                None => Vec::new(),
+                
             });
         view! {
             <div>
