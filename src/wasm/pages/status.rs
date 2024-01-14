@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::Object;
 use crate::wasm::components::ObjectLink;
-use crate::wasm::utils::gateway_url;
 use crate::wasm::env::APP_VERSION;
+use crate::wasm::utils::gateway_url;
 
 use super::{Page, PageContext};
 
@@ -31,18 +31,17 @@ impl Page for StatusPage {
 
 impl IntoView for StatusPage {
     fn into_view(self) -> View {
-        let items: leptos::RwSignal<Vec<StatusRow>> =
-            create_rw_signal({
-                // Filter for object with metadata that we can contruct Writng from
-                    let manifest = self.ctx().manifest();
-                    let mut status = manifest
-                        .objects()
-                        .iter()
-                        .map(|item| item.into())
-                        .collect::<Vec<StatusRow>>();
-                    status.sort_by(|a, b| b.date.cmp(&a.date));
-                    status
-            });
+        let items: leptos::RwSignal<Vec<StatusRow>> = create_rw_signal({
+            // Filter for object with metadata that we can contruct Writng from
+            let manifest = self.ctx().manifest();
+            let mut status = manifest
+                .objects()
+                .iter()
+                .map(|item| item.into())
+                .collect::<Vec<StatusRow>>();
+            status.sort_by(|a, b| b.date.cmp(&a.date));
+            status
+        });
         view! {
             <div>
                 <h1 class="text-3xl font-bold italic bg-gray-800 p-2">

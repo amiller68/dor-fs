@@ -8,7 +8,10 @@ use ethers::types::Address;
 use futures_util::stream::TryStreamExt;
 
 use crate::eth::{EthClient, EthClientError, RootCid};
-use crate::ipfs::{IpfsApi, IpfsClient, IpfsClientError, IpfsError, IpfsGateway, add_data_request, hash_data_request};
+use crate::ipfs::{
+    add_data_request, hash_data_request, IpfsApi, IpfsClient, IpfsClientError, IpfsError,
+    IpfsGateway,
+};
 
 use crate::types::Manifest;
 
@@ -195,8 +198,7 @@ impl Device {
         R: 'static + Read + Send + Sync + Unpin,
     {
         let add_response = if remote {
-            self.ipfs_client
-                .add_with_options(data, add_data_request())
+            self.ipfs_client.add_with_options(data, add_data_request())
         } else {
             self.local_ipfs_client
                 .add_with_options(data, add_data_request())
@@ -217,8 +219,7 @@ impl Device {
         R: 'static + Read + Send + Sync + Unpin,
     {
         let add_response = if remote {
-            self.ipfs_client
-                .add_with_options(data, hash_data_request())
+            self.ipfs_client.add_with_options(data, hash_data_request())
         } else {
             self.local_ipfs_client
                 .add_with_options(data, hash_data_request())

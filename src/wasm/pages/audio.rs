@@ -27,25 +27,24 @@ impl Page for AudioPage {
 
 impl IntoView for AudioPage {
     fn into_view(self) -> View {
-        let items: leptos::RwSignal<Vec<AudioRow>> =
-            create_rw_signal({
-                // Filter for object with metadata that we can contruct Writng from
-                let manifest = self.ctx().manifest();
-                    let mut audio = manifest
-                        .objects()
-                        .iter()
-                        .filter(|(_path, object)| {
-                            let metadata = object.metadata();
-                            match Audio::try_from(metadata.clone()) {
-                                Ok(_) => true,
-                                Err(_) => false,
-                            }
-                        })
-                        .map(|(_path, object)| object.into())
-                        .collect::<Vec<AudioRow>>();
-                    audio.sort_by(|a, b| b.date.cmp(&a.date));
-                    audio
-            });
+        let items: leptos::RwSignal<Vec<AudioRow>> = create_rw_signal({
+            // Filter for object with metadata that we can contruct Writng from
+            let manifest = self.ctx().manifest();
+            let mut audio = manifest
+                .objects()
+                .iter()
+                .filter(|(_path, object)| {
+                    let metadata = object.metadata();
+                    match Audio::try_from(metadata.clone()) {
+                        Ok(_) => true,
+                        Err(_) => false,
+                    }
+                })
+                .map(|(_path, object)| object.into())
+                .collect::<Vec<AudioRow>>();
+            audio.sort_by(|a, b| b.date.cmp(&a.date));
+            audio
+        });
         view! {
             <div>
                 <h1 class="text-3xl font-bold italic bg-gray-800 p-2">

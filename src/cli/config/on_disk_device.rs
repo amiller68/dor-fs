@@ -12,11 +12,9 @@ use ethers::signers::{LocalWallet, Wallet};
 use ethers::types::Address;
 use serde::{Deserialize, Serialize};
 
-use crate::eth::{
-    EthClient, EthClientError, EthRemote
-};
-use crate::ipfs::{IpfsClient, IpfsError, IpfsGateway, IpfsRemote};
 use crate::cli::device::Device;
+use crate::eth::{EthClient, EthClientError, EthRemote};
+use crate::ipfs::{IpfsClient, IpfsError, IpfsGateway, IpfsRemote};
 
 use crate::types::Manifest;
 

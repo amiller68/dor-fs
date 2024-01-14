@@ -1,5 +1,5 @@
-mod types;
 mod eth;
+mod types;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod cli;

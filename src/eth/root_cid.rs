@@ -1,16 +1,9 @@
 use cid::Cid;
-use ethers::{
-    abi::Abi,
-    signers::LocalWallet,
-    types::Address,
-};
+use ethers::{abi::Abi, signers::LocalWallet, types::Address};
 use serde_json::Value;
 
 #[cfg(not(target_arch = "wasm32"))]
-use ethers::{
-    prelude::*,
-    types::TransactionReceipt
-};
+use ethers::{prelude::*, types::TransactionReceipt};
 
 use super::cid_token::CidToken;
 use super::{EthClient, EthClientError};

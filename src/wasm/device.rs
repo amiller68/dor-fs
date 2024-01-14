@@ -21,8 +21,9 @@ pub struct WasmDevice {
 /// One stop shop for coordinating interactions with a given remote configuration
 impl WasmDevice {
     pub fn new() -> Result<Self, WasmDeviceError> {
-        let contract_address =
-            Address::from_str(APP_CONTRACT_ADDRESS).map_err(|_e| WasmDeviceError::InvalidContractAddress(APP_CONTRACT_ADDRESS.to_string()))?;
+        let contract_address = Address::from_str(APP_CONTRACT_ADDRESS).map_err(|_e| {
+            WasmDeviceError::InvalidContractAddress(APP_CONTRACT_ADDRESS.to_string())
+        })?;
         let chain_id = u32::from_str(APP_CHAIN_ID)?;
         let eth_remote = EthRemote {
             rpc_url: APP_RPC_URL.parse()?,
@@ -67,10 +68,7 @@ impl WasmDevice {
     /// # Args
     /// - cid: the cid to read
     /// - path: Optional path parameter if the Cid points to a unix-fs directory
-    pub async fn read_ipfs_gateway_data(
-        &self,
-        cid: &Cid,
-    ) -> Result<Vec<u8>, WasmDeviceError> {
+    pub async fn read_ipfs_gateway_data(&self, cid: &Cid) -> Result<Vec<u8>, WasmDeviceError> {
         let url = gateway_url(cid);
         let resp = reqwest::get(url).await?;
         let bytes = resp.bytes().await?;

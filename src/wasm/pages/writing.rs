@@ -27,25 +27,23 @@ impl Page for WritingPage {
 
 impl IntoView for WritingPage {
     fn into_view(self) -> View {
-        let items: leptos::RwSignal<Vec<WritingRow>> =
-            create_rw_signal({
-                let manifest = self.ctx().manifest();
-                    let mut writing = manifest
-                        .objects()
-                        .iter()
-                        .filter(|(_path, object)| {
-                            let metadata = object.metadata();
-                            match Writing::try_from(metadata.clone()) {
-                                Ok(_) => true,
-                                Err(_) => false,
-                            }
-                        })
-                        .map(|(_path, object)| object.into())
-                        .collect::<Vec<WritingRow>>();
-                    writing.sort_by(|a, b| b.date.cmp(&a.date));
-                    writing
-                
-            });
+        let items: leptos::RwSignal<Vec<WritingRow>> = create_rw_signal({
+            let manifest = self.ctx().manifest();
+            let mut writing = manifest
+                .objects()
+                .iter()
+                .filter(|(_path, object)| {
+                    let metadata = object.metadata();
+                    match Writing::try_from(metadata.clone()) {
+                        Ok(_) => true,
+                        Err(_) => false,
+                    }
+                })
+                .map(|(_path, object)| object.into())
+                .collect::<Vec<WritingRow>>();
+            writing.sort_by(|a, b| b.date.cmp(&a.date));
+            writing
+        });
         view! {
             <div>
                 <h1 class="text-3xl font-bold italic bg-gray-800 p-2">

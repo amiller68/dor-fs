@@ -283,8 +283,12 @@ fn normalize_path(path: &PathBuf) -> PathBuf {
     let mut normalized_path = PathBuf::new();
     for component in path.components() {
         match component {
-            std::path::Component::ParentDir => { normalized_path.pop(); },
-            _ => { normalized_path.push(component); }
+            std::path::Component::ParentDir => {
+                normalized_path.pop();
+            }
+            _ => {
+                normalized_path.push(component);
+            }
         }
     }
     normalized_path

@@ -5,8 +5,8 @@ use leptos_router::*;
 use serde::{Deserialize, Serialize};
 
 use crate::types::Manifest;
+use crate::wasm::components::{ErrorMessageBox, InternalLink};
 use crate::wasm::device::{WasmDevice, WasmDeviceError};
-use crate::wasm::components::{InternalLink, ErrorMessageBox};
 use crate::wasm::env::APP_NAME;
 
 // This router is an attempt to make SPAs easy
@@ -16,17 +16,17 @@ mod about;
 mod audio;
 mod index;
 mod object;
+mod status;
 mod visual;
 mod writing;
-mod status;
 
 use about::AboutPage;
 use audio::AudioPage;
 use index::IndexPage;
 use object::ObjectPage;
+use status::StatusPage;
 use visual::VisualPage;
 use writing::WritingPage;
-use status::StatusPage;
 
 /// A Shared page context to pass to all pages within our internal router
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -130,42 +130,41 @@ fn PageRoute() -> impl IntoView {
             let chain_id = device.chain_id();
             let route = route.get();
             let query = query.get();
-            let root_cid = match device
-                .read_root_cid()
-                .await.map_err(PageError::RootCidRead) {
-                    Ok(cid) => cid,
-                    Err(e) => {
-                        return PageContextResource {
-                            ctx: None,
-                            error_message: Some(e.to_string()),
-                        }
+            let root_cid = match device.read_root_cid().await.map_err(PageError::RootCidRead) {
+                Ok(cid) => cid,
+                Err(e) => {
+                    return PageContextResource {
+                        ctx: None,
+                        error_message: Some(e.to_string()),
                     }
-                };
+                }
+            };
             if root_cid == Cid::default() {
                 return PageContextResource {
                     ctx: None,
                     error_message: Some(PageError::NoRootCid.to_string()),
-                }
+                };
             }
             let manifest = match device
                 .read_manifest(&root_cid)
-                .await.map_err(PageError::ManifestRead) {
-                    Ok(manifest) => manifest,
-                    Err(e) => {
-                        return PageContextResource {
-                            ctx: None,
-                            error_message: Some(e.to_string()),
-                        }
+                .await
+                .map_err(PageError::ManifestRead)
+            {
+                Ok(manifest) => manifest,
+                Err(e) => {
+                    return PageContextResource {
+                        ctx: None,
+                        error_message: Some(e.to_string()),
                     }
-                };
-            
+                }
+            };
 
             let ctx = PageContext {
                 root_cid,
                 chain_id,
                 manifest,
                 route,
-                query
+                query,
             };
 
             PageContextResource {
@@ -184,7 +183,7 @@ fn PageRoute() -> impl IntoView {
                         Some(msg) => view! { <ErrorMessageBox msg=msg.clone()/> }.into_view(),
                         None => c.ctx().into_view(),
                     }
-                } 
+                }
             }}
         </div>
     }

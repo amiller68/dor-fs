@@ -90,7 +90,7 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     if target_arch == "wasm32" {
-        println!("cargo:rustc-env=OUT_DIR={}", "krondor-org-web");
+        println!("cargo:rustc-env=OUT_DIR=krondor-org-web");
         web();
     }
     report_build_profile();

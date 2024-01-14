@@ -27,25 +27,24 @@ impl Page for VisualPage {
 
 impl IntoView for VisualPage {
     fn into_view(self) -> View {
-        let items: leptos::RwSignal<Vec<VisualRow>> =
-            create_rw_signal({
-                // Filter for object with metadata that we can contruct Writng from
-                    let manifest = self.ctx().manifest();
-                    let mut visual = manifest
-                        .objects()
-                        .iter()
-                        .filter(|(_path, object)| {
-                            let metadata = object.metadata();
-                            match Visual::try_from(metadata.clone()) {
-                                Ok(_) => true,
-                                Err(_) => false,
-                            }
-                        })
-                        .map(|(_path, object)| object.into())
-                        .collect::<Vec<VisualRow>>();
-                    visual.sort_by(|a, b| b.date.cmp(&a.date));
-                    visual
-            });
+        let items: leptos::RwSignal<Vec<VisualRow>> = create_rw_signal({
+            // Filter for object with metadata that we can contruct Writng from
+            let manifest = self.ctx().manifest();
+            let mut visual = manifest
+                .objects()
+                .iter()
+                .filter(|(_path, object)| {
+                    let metadata = object.metadata();
+                    match Visual::try_from(metadata.clone()) {
+                        Ok(_) => true,
+                        Err(_) => false,
+                    }
+                })
+                .map(|(_path, object)| object.into())
+                .collect::<Vec<VisualRow>>();
+            visual.sort_by(|a, b| b.date.cmp(&a.date));
+            visual
+        });
         view! {
             <div>
                 <h1 class="text-3xl font-bold italic bg-gray-800 p-2">
