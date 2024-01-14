@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use cid::Cid;
 
+use crate::cli::changes::ChangeType;
 use crate::cli::config::{Config, ConfigError};
 use crate::cli::device::{Device, DeviceError};
 use crate::types::{Manifest, Object};
@@ -11,16 +12,36 @@ use crate::types::{Manifest, Object};
 pub async fn push_file(
     device: &Device,
     file_path: &PathBuf,
-    object: &Object,
+    _object: &Object,
+    attempt: u32,
 ) -> Result<Cid, PushError> {
-    // See if the cid already exists on the remote
-    if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
-        println!("Skipping {} as it already exists", file_path.display());
-        return Ok(*object.cid());
-    };
+    let sleep_time = 4 + 4u64.pow(attempt);
+    // TODO: having real problems with gateway rate limits -- let's just remove this for now
+    // Note: Infura has rate limits, so we need to sleep here
+    // if attempt > 0 {
+    //     println!(
+    //         "Sleeping for {} seconds before checking the block",
+    //         sleep_time
+    //     );
+    // }
+    // std::thread::sleep(std::time::Duration::from_secs(sleep_time));
+    // // See if the cid already exists on the remote
+    // if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
+    //     println!("Skipping {} as it already exists", file_path.display());
+    //     return Ok(*object.cid());
+    // };
+    // Sleep for a bit to avoid rate limits
+    if attempt > 0 {
+        println!(
+            "Sleeping for {} seconds before pushing the file",
+            sleep_time
+        );
+    }
+    std::thread::sleep(std::time::Duration::from_secs(sleep_time));
     println!("Pushing {}", file_path.display());
     let file = File::open(file_path)?;
     let cid = device.write_ipfs_data(file, true).await?;
+    println!("Pushed {} as {}", file_path.display(), cid);
     Ok(cid)
 }
 
@@ -31,6 +52,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
 
     let disk_base = config.base()?;
     let change_log = config.change_log()?;
+    let log = change_log.log();
     let (root_cid, base) = change_log.first_version().unwrap();
     let (next_root_cid, next_base) = change_log.last_version().unwrap();
 
@@ -58,14 +80,25 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
 
     // Tell the remote to pin all the objects
     for (path, object) in objects.iter() {
-        let mut attempts = 0;
-        let tries = 5;
+        match log.get(path) {
+            Some((_cid, ChangeType::Base | ChangeType::Removed)) => {
+                continue;
+            }
+            Some(_) => {}
+            None => {
+                return Err(PushError::MissingLogEntry(path.clone()));
+            }
+        }
+        println!("Pushing {} to ipfs @ {}", path.display(), object.cid());
+        let tries: u32 = 5;
         for attempt in 0..tries {
-            // Note: Infura has rate limits, so we need to sleep here
-            std::thread::sleep(std::time::Duration::from_secs(2 ^ attempt));
-            let cid = match push_file(&device, &working_dir.join(path), object).await {
+            let cid = match push_file(&device, &working_dir.join(path), object, attempt).await {
                 Ok(cid) => cid,
                 Err(e) => {
+                    if attempt == tries - 1 {
+                        println!("Failed to push {}", path.display());
+                        return Err(PushError::PushFailed);
+                    }
                     println!("Error pinning {}: {}", path.display(), e);
                     println!("Retrying...");
                     continue;
@@ -74,11 +107,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
             if cid != *object.cid() {
                 return Err(PushError::CidMismatch(cid, *object.cid()));
             }
-            attempts = attempt;
             break;
-        }
-        if attempts == tries - 1 {
-            return Err(PushError::PushFailed);
         }
     }
 
@@ -115,4 +144,6 @@ pub enum PushError {
     MissmatchedBase(Manifest, Manifest),
     #[error("push failed")]
     PushFailed,
+    #[error("missing log entry for {0}")]
+    MissingLogEntry(PathBuf),
 }
