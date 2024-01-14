@@ -5,10 +5,16 @@ use cid::Cid;
 
 use crate::cli::config::{Config, ConfigError};
 use crate::cli::device::{Device, DeviceError};
-use crate::types::Manifest;
+use crate::types::{Manifest, Object};
 
 /// Push a file to the remote ipfs node
-pub async fn push_file(device: &Device, file_path: &PathBuf) -> Result<Cid, PushError> {
+pub async fn push_file(device: &Device, file_path: &PathBuf, object: &Object) -> Result<Cid, PushError> {
+    // See if the cid already exists on the remote
+    if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
+        println!("Skipping {} as it already exists", file_path.display());
+        return Ok(*object.cid());
+    };
+    println!("Pushing {}", file_path.display());
     let file = File::open(file_path)?;
     let cid = device.write_ipfs_data(file, true).await?;
     Ok(cid)
@@ -48,22 +54,34 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
 
     // Tell the remote to pin all the objects
     for (path, object) in objects.iter() {
-        // TODO: this doesn't work with infura for some reason
-        // See if the cid already exists on the remote
-        if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
-            println!("Skipping {} as it already exists", path.display());
-            continue;
-        };
-        println!("Pushing {}", path.display());
-        let cid = push_file(&device, &working_dir.join(path)).await?;
-        if cid != *object.cid() {
-            return Err(PushError::CidMismatch(cid, *object.cid()));
+        let mut attempts = 0;
+        let tries = 5;
+        for attempt in 0..tries {
+            // Note: Infura has rate limits, so we need to sleep here
+            std::thread::sleep(std::time::Duration::from_secs(1 + 2 ^ attempt));
+            let cid = match push_file(&device, &working_dir.join(path), object).await {
+                Ok(cid) => cid,
+                Err(e) => {
+                    println!("Error pinning {}: {}", path.display(), e);
+                    println!("Retrying...");
+                    continue;
+                }
+            };
+            if cid != *object.cid() {
+                return Err(PushError::CidMismatch(cid, *object.cid()));
+            }
+            attempts = attempt;
+            break;
+        }
+        if attempts == tries - 1 {
+            return Err(PushError::PushFailed);
         }
     }
 
     // Write the dor store against the remote
     let new_root_cid = device.write_manifest(next_base, true).await?;
 
+    println!("Updating root cid from {} to {}", root_cid, new_root_cid);
     // Push the new root cid to the eth client
     device.update_root_cid(*root_cid, new_root_cid).await?;
     let mut change_log = change_log.clone();
@@ -91,4 +109,6 @@ pub enum PushError {
     MissmatchedRootCid(Cid, Cid),
     #[error("missmatched base: {0:?} != {1:?}")]
     MissmatchedBase(Manifest, Manifest),
+    #[error("push failed")]
+    PushFailed,
 }
