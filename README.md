@@ -159,8 +159,22 @@ If you want to see the results of your CLI changes, you can run the following:
 yarn start
 ```
 
-This should use the configuration in `web.config` to read the RootCid contract and display the latest content that you pushed through the CLI.
+to build and serve the web app locally. This commnad will use the configuration you defined in `web.config` to read the RootCid contract and display the latest content that you pushed through the CLI.
 
-The site should likewise be available at `http://localhost:3000`
+The site should be available at `http://localhost:3000`
 
-You can deploy this site to a host of your choice. At that point you should be able to use the CLI to push changes to your Ipfs node and update the RootCid contract, and the web app should be able to read the latest content from the contract and display it.
+Build artifacts should be available in the `dist` directory. This directory is ignored by version control.
+
+The build artifacts are just Html and Javascript, so their portable enough to deploy basically anywhere that can serve static content. The only other infrastructure 
+you need to provide for as the Ipfs Gateway and Ethereum RPC endpoint. You can almost think of the build artifact as a little pointer to that infrastructure, which you can host with any number of solutions. For example you could:
+- Push the build artifacts to Ipfs, and just provide a link to the gateway
+- Push your build artifacts to Github Pages, and just serve content from this very repo
+- Push your build artifacts to a service like Fleek, and have your site easily available on both the web and the decentralized web
+
+To just build the site, you can run:
+
+```bash
+yarn build
+```
+
+Build artifacts should be available in the `build` directory. This directory is NOT ignored by version control.
