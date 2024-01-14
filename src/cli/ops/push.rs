@@ -8,7 +8,11 @@ use crate::cli::device::{Device, DeviceError};
 use crate::types::{Manifest, Object};
 
 /// Push a file to the remote ipfs node
-pub async fn push_file(device: &Device, file_path: &PathBuf, object: &Object) -> Result<Cid, PushError> {
+pub async fn push_file(
+    device: &Device,
+    file_path: &PathBuf,
+    object: &Object,
+) -> Result<Cid, PushError> {
     // See if the cid already exists on the remote
     if device.stat_ipfs_data(object.cid(), true).await?.is_some() {
         println!("Skipping {} as it already exists", file_path.display());
@@ -58,7 +62,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
         let tries = 5;
         for attempt in 0..tries {
             // Note: Infura has rate limits, so we need to sleep here
-            std::thread::sleep(std::time::Duration::from_secs(1 + 2 ^ attempt));
+            std::thread::sleep(std::time::Duration::from_secs(2 ^ attempt));
             let cid = match push_file(&device, &working_dir.join(path), object).await {
                 Ok(cid) => cid,
                 Err(e) => {
