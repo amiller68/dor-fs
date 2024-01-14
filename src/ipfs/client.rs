@@ -57,7 +57,6 @@ pub fn hash_data_request() -> AddRequest<'static> {
 #[allow(clippy::field_reassign_with_default)]
 pub fn add_data_request() -> AddRequest<'static> {
     let mut add = AddRequest::default();
-    add.pin = Some(true);
     add.cid_version = Some(DEFAULT_CID_VERSION);
     add.hash = Some(DEFAULT_HASH_FUNCTION);
     add

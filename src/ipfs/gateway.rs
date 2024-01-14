@@ -44,13 +44,13 @@ impl IpfsGateway {
         };
         let url = match path {
             Some(p) => Url::parse(&format!(
-                "{}://{}.ipfs.{}/{}",
+                "{}://{}/ipfs/{}/{}",
                 scheme,
-                cid,
                 host_str,
+                cid,
                 p.display()
             )),
-            None => Url::parse(&format!("{}://{}.ipfs.{}", scheme, cid, host_str)),
+            None => Url::parse(&format!("{}://{}/ipfs/{}", scheme, host_str, cid)),
         }?;
         // TODO: not 100% sure why I need to use trust_dns here, but this works
         #[cfg(not(target_arch = "wasm32"))]

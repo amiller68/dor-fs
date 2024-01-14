@@ -4,8 +4,8 @@ lib/
 cache/
 dist/
 out/
-playground/.fs
 .gas-snapshot
 web.config.dev
 src/wasm/env.rs
 node_modules/
+sepolia/*

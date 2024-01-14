@@ -22,14 +22,14 @@ cargo run -- device create \
 cargo run -- device set dev
 
 
-rm -rf playground/.fs
-cargo run -- --dir playground init
-cargo run -- --dir playground pull
-cargo run -- --dir playground stage
-cargo run -- --dir playground tag --name audio   --path audio/freak-mic-test.mp3        --value '{"title": "Freak on a Leash (Sample)", "project": "mic_test"}'
-cargo run -- --dir playground tag --name writing --path writing/hello_world.md      --value '{"title": "Hello World", "description": "A lil hello!", "genre": "blog"}'
-cargo run -- --dir playground tag --name visual  --path visual/petting_turtles.jpg --value '{"title": "Draw me, Naked, Petting the Turtles", "location": "New York", "medium": "blue ink on lined paper"}'
-cargo run -- --dir playground --admin-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 push
+rm -rf test/.fs
+cargo run -- --dir test init
+cargo run -- --dir test pull
+cargo run -- --dir test stage
+cargo run -- --dir test tag --name audio   --path audio/freak-mic-test.mp3        --value '{"title": "Freak on a Leash (Sample)", "project": "mic_test"}'
+cargo run -- --dir test tag --name writing --path writing/hello_world.md      --value '{"title": "Hello World", "description": "A lil hello!", "genre": "blog"}'
+cargo run -- --dir test tag --name visual  --path visual/petting_turtles.jpg --value '{"title": "Draw me, Naked, Petting the Turtles", "location": "New York", "medium": "blue ink on lined paper"}'
+cargo run -- --dir test  --admin-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 push
 
 echo 'APP_NAME=Krondor.Org' > web.config.dev
 echo 'APP_CONTRACT_ADDRESS='${ADDRESS} >> web.config.dev
