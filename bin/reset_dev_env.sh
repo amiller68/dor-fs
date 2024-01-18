@@ -7,7 +7,7 @@ ADDRESS=$(forge \
 	--rpc-url http://localhost:8545 \
 	--chain 31337 \
 	--private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
-	src/device/eth/RootCid.sol:RootCid \
+	src/eth/RootCid.sol:RootCid \
 	--constructor-args "[0x0100000000000000000000000000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000000000000000000000000000]" |
 	grep -o 'Deployed to: [0-9a-fA-Fx]\+' | sed 's/Deployed to: //')
 
@@ -22,14 +22,14 @@ cargo run -- device create \
 cargo run -- device set dev
 
 
-rm -rf test/.fs
-cargo run -- --dir test init
-cargo run -- --dir test pull
-cargo run -- --dir test stage
-cargo run -- --dir test tag --name audio   --path audio/freak-mic-test.mp3        --value '{"title": "Freak on a Leash (Sample)", "project": "mic_test"}'
-cargo run -- --dir test tag --name writing --path writing/hello_world.md      --value '{"title": "Hello World", "description": "A lil hello!", "genre": "blog"}'
-cargo run -- --dir test tag --name visual  --path visual/petting_turtles.jpg --value '{"title": "Draw me, Naked, Petting the Turtles", "location": "New York", "medium": "blue ink on lined paper"}'
-cargo run -- --dir test  --admin-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 push
+rm -rf bin/test/.fs
+cargo run -- --dir bin/test init
+cargo run -- --dir bin/test pull
+cargo run -- --dir bin/test stage
+cargo run -- --dir bin/test tag --name audio   --path audio/freak-mic-test.mp3        --value '{"title": "Freak on a Leash (Sample)", "project": "mic_test"}'
+cargo run -- --dir bin/test tag --name writing --path writing/hello_world.md      --value '{"title": "Hello World", "description": "A lil hello!", "genre": "blog"}'
+cargo run -- --dir bin/test tag --name visual  --path visual/petting_turtles.jpg --value '{"title": "Draw me, Naked, Petting the Turtles", "location": "New York", "medium": "blue ink on lined paper"}'
+cargo run -- --dir bin/test  --admin-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 push
 
 echo 'APP_NAME=Krondor.Org' > web.config.dev
 echo 'APP_CONTRACT_ADDRESS='${ADDRESS} >> web.config.dev

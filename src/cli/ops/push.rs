@@ -38,7 +38,7 @@ pub async fn push_file(
         );
     }
     std::thread::sleep(std::time::Duration::from_secs(sleep_time));
-    println!("Pushing {}", file_path.display());
+    // println!("Pushing {}", file_path.display());
     let file = File::open(file_path)?;
     let cid = device.write_ipfs_data(file, true).await?;
     println!("Pushed {} as {}", file_path.display(), cid);
@@ -89,7 +89,7 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
                 return Err(PushError::MissingLogEntry(path.clone()));
             }
         }
-        println!("Pushing {} to ipfs @ {}", path.display(), object.cid());
+        // println!("Pushing {} to ipfs @ {}", path.display(), object.cid());
         let tries: u32 = 5;
         for attempt in 0..tries {
             let cid = match push_file(&device, &working_dir.join(path), object, attempt).await {

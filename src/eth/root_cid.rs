@@ -3,7 +3,10 @@ use ethers::{abi::Abi, signers::LocalWallet, types::Address};
 use serde_json::Value;
 
 #[cfg(not(target_arch = "wasm32"))]
-use ethers::{prelude::*, types::TransactionReceipt};
+use ethers::{
+    prelude::*,
+    types::{transaction::eip2718::TypedTransaction, TransactionReceipt, TransactionRequest},
+};
 
 use super::cid_token::CidToken;
 use super::{EthClient, EthClientError};
@@ -107,6 +110,13 @@ impl RootCid {
             .to(contract.address())
             .data(data)
             .chain_id(chain_id);
+        let typed_tx = TypedTransaction::Legacy(tx.clone());
+        // Estimate gas
+        let gas = signer
+            .estimate_gas(&typed_tx, None)
+            .await
+            .map_err(|e| RootCidError::Default(e.to_string()))?;
+        let tx = tx.gas(gas);
         let signed_tx = signer
             .send_transaction(tx, None)
             .await
