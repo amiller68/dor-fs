@@ -53,7 +53,10 @@ pub enum Command {
         value: String,
     },
     /// Squash and sync changes with the remote
-    Push,
+    Push {
+        #[clap(long, short, default_value = "false")]
+        minimal: bool,
+    },
 }
 
 // TODO: add ability to manage keystores here

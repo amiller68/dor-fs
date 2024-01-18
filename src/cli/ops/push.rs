@@ -45,7 +45,7 @@ pub async fn push_file(
     Ok(cid)
 }
 
-pub async fn push(config: &Config) -> Result<(), PushError> {
+pub async fn push(config: &Config, minimal: bool) -> Result<(), PushError> {
     let working_dir = config.working_dir().clone();
     let device = config.device()?;
     let disk_root_cid = config.root_cid()?;
@@ -76,38 +76,40 @@ pub async fn push(config: &Config) -> Result<(), PushError> {
         return Err(PushError::NoChanges);
     }
 
-    let objects = next_base.objects();
+    if !minimal {
+        let objects = next_base.objects();
 
-    // Tell the remote to pin all the objects
-    for (path, object) in objects.iter() {
-        match log.get(path) {
-            Some((_cid, ChangeType::Base | ChangeType::Removed)) => {
-                continue;
-            }
-            Some(_) => {}
-            None => {
-                return Err(PushError::MissingLogEntry(path.clone()));
-            }
-        }
-        // println!("Pushing {} to ipfs @ {}", path.display(), object.cid());
-        let tries: u32 = 5;
-        for attempt in 0..tries {
-            let cid = match push_file(&device, &working_dir.join(path), object, attempt).await {
-                Ok(cid) => cid,
-                Err(e) => {
-                    if attempt == tries - 1 {
-                        println!("Failed to push {}", path.display());
-                        return Err(PushError::PushFailed);
-                    }
-                    println!("Error pinning {}: {}", path.display(), e);
-                    println!("Retrying...");
+        // Tell the remote to pin all the objects
+        for (path, object) in objects.iter() {
+            match log.get(path) {
+                Some((_cid, ChangeType::Base | ChangeType::Removed)) => {
                     continue;
                 }
-            };
-            if cid != *object.cid() {
-                return Err(PushError::CidMismatch(cid, *object.cid()));
+                Some(_) => {}
+                None => {
+                    return Err(PushError::MissingLogEntry(path.clone()));
+                }
             }
-            break;
+            // println!("Pushing {} to ipfs @ {}", path.display(), object.cid());
+            let tries: u32 = 5;
+            for attempt in 0..tries {
+                let cid = match push_file(&device, &working_dir.join(path), object, attempt).await {
+                    Ok(cid) => cid,
+                    Err(e) => {
+                        if attempt == tries - 1 {
+                            println!("Failed to push {}", path.display());
+                            return Err(PushError::PushFailed);
+                        }
+                        println!("Error pinning {}: {}", path.display(), e);
+                        println!("Retrying...");
+                        continue;
+                    }
+                };
+                if cid != *object.cid() {
+                    return Err(PushError::CidMismatch(cid, *object.cid()));
+                }
+                break;
+            }
         }
     }
 

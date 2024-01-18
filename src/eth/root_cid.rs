@@ -5,7 +5,7 @@ use serde_json::Value;
 #[cfg(not(target_arch = "wasm32"))]
 use ethers::{
     prelude::*,
-    types::{transaction::eip2718::TypedTransaction, TransactionReceipt, TransactionRequest},
+    types::{TransactionReceipt, TransactionRequest},
 };
 
 use super::cid_token::CidToken;
@@ -109,21 +109,18 @@ impl RootCid {
         let tx = TransactionRequest::new()
             .to(contract.address())
             .data(data)
+            .gas(10_000_000)
+            .gas_price(2_000_000_000)
             .chain_id(chain_id);
-        let typed_tx = TypedTransaction::Legacy(tx.clone());
-        // Estimate gas
-        let gas = signer
-            .estimate_gas(&typed_tx, None)
-            .await
-            .map_err(|e| RootCidError::Default(e.to_string()))?;
-        let tx = tx.gas(gas);
         let signed_tx = signer
             .send_transaction(tx, None)
             .await
             .map_err(|e| RootCidError::Default(e.to_string()))?;
+        println!("Signed tx: {:?}", signed_tx);
         let reciept = signed_tx
             .await
             .map_err(|e| RootCidError::Default(e.to_string()))?;
+        println!("Reciept: {:?}", reciept);
         Ok(reciept)
     }
 }

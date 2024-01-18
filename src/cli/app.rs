@@ -42,8 +42,8 @@ impl App {
             Command::Tag { name, path, value } => {
                 tag(&config, &name, &path, &value).await?;
             }
-            Command::Push => {
-                push(&config).await?;
+            Command::Push { minimal } => {
+                push(&config, minimal).await?;
             }
         }
         Ok(())

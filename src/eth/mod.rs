@@ -65,6 +65,12 @@ impl EthClient {
         self.contract.clone()
     }
 
+    // #[cfg(not(target_arch = "wasm32"))]
+    // /// Get the provider from the implementing struct
+    // pub fn provider(&self) -> Provider<Http> {
+    //     self.provider.clone()
+    // }
+
     #[cfg(not(target_arch = "wasm32"))]
     /// Get the signer from the implementing struct
     pub fn signer(&self) -> Option<SignerMiddleware<Provider<Http>, LocalWallet>> {
