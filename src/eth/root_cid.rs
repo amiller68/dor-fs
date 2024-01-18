@@ -109,8 +109,6 @@ impl RootCid {
         let tx = TransactionRequest::new()
             .to(contract.address())
             .data(data)
-            .gas(10_000_000)
-            .gas_price(2_000_000_000)
             .chain_id(chain_id);
         let signed_tx = signer
             .send_transaction(tx, None)
