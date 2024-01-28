@@ -95,6 +95,9 @@ main {
   a:hover {
     @apply italic;
   }
+  ul {
+    @apply list-disc list-inside;
+  }
 }
 
 /* Link Component */
