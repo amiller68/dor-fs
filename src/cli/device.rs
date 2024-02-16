@@ -230,35 +230,35 @@ impl Device {
         Ok(cid)
     }
 
-    // /// Stat the presence of a block against the configured IpfsClients
-    // /// # Args
-    // /// - cid: the cid to check
-    // /// - remote: whether to do so against a remote or local instance
-    // /// # Returns the size of the queried block
-    // pub async fn stat_ipfs_data(
-    //     &self,
-    //     cid: &Cid,
-    //     remote: bool,
-    // ) -> Result<Option<u64>, DeviceError> {
-    //     let cid = cid.to_string();
-    //     let stat_response = if remote {
-    //         self.ipfs_client.block_stat(&cid)
-    //     } else {
-    //         self.local_ipfs_client.block_stat(&cid)
-    //     }
-    //     .await;
-    //     match stat_response {
-    //         Ok(stat) => Ok(Some(stat.size)),
-    //         Err(IpfsClientError::Api(api_error)) => {
-    //             if api_error.code == 0 && api_error.message == "blockservice: key not found" {
-    //                 Ok(None)
-    //             } else {
-    //                 Err(DeviceError::IpfsClient(IpfsClientError::Api(api_error)))
-    //             }
-    //         }
-    //         Err(e) => Err(DeviceError::IpfsClient(e)),
-    //     }
-    // }
+    /// Stat the presence of a block against the configured IpfsClients
+    /// # Args
+    /// - cid: the cid to check
+    /// - remote: whether to do so against a remote or local instance
+    /// # Returns the size of the queried block
+    pub async fn _stat_ipfs_data(
+        &self,
+        cid: &Cid,
+        remote: bool,
+    ) -> Result<Option<u64>, DeviceError> {
+        let cid = cid.to_string();
+        let stat_response = if remote {
+            self.ipfs_client.block_stat(&cid)
+        } else {
+            self.local_ipfs_client.block_stat(&cid)
+        }
+        .await;
+        match stat_response {
+            Ok(stat) => Ok(Some(stat.size)),
+            Err(IpfsClientError::Api(api_error)) => {
+                if api_error.code == 0 && api_error.message == "blockservice: key not found" {
+                    Ok(None)
+                } else {
+                    Err(DeviceError::IpfsClient(IpfsClientError::Api(api_error)))
+                }
+            }
+            Err(e) => Err(DeviceError::IpfsClient(e)),
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]

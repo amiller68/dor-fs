@@ -36,7 +36,7 @@ impl TryFrom<Value> for Schemas {
 //  How would you get to the eventual goal of defining these an ANSII or something?
 //  Lots of unanswered question, but I'm just experimenting here, and for now it should be alright :/
 // TODO: These could generally benefit from macros
-
+#[allow(dead_code)]
 pub trait Schema: Into<Value> + TryFrom<Value> {
     const NAME: &'static str;
 
@@ -65,8 +65,6 @@ pub trait Schema: Into<Value> + TryFrom<Value> {
             _ => panic!("value is not an object"),
         }
     }
-
-    // fn try_from_value(value: Value) -> Result<Self, SchemaError>;
 
     /// Safe implmentation of TryFrom<Value> for trait implementers
     fn schema_from_value(value: Value) -> Result<Self, SchemaError> {
