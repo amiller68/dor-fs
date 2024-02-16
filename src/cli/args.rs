@@ -54,8 +54,12 @@ pub enum Command {
     },
     /// Squash and sync changes with the remote
     Push {
+        // Just push updated objects to IPFS, without updating our roots
         #[clap(long, short, default_value = "false")]
         minimal: bool,
+        // Try to push all objects, even if they haven't changed
+        #[clap(long, short, default_value = "false")]
+        force: bool,
     },
 }
 

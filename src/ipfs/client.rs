@@ -26,6 +26,7 @@ impl TryFrom<IpfsRemote> for IpfsClient {
         let username = url.username();
         let maybe_password = url.password();
         let host_str = url.host_str().unwrap();
+        // TODO: for some reason, the port is not being parsed correctly, and is always None
         let port = url.port().unwrap_or(5001);
         let client = match maybe_password {
             Some(password) => HyperIpfsClient::from_host_and_port(scheme, host_str, port)?
